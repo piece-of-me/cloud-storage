@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+
+  server:
+    container_name: server
+    image: nginx:1.23
+    volumes:
+      - ./:/var/www
+      - ./_docker/nginx/conf.d/:/etc/nginx/conf.d
+    ports:
+      - "8000:80"
+    depends_on:
+      - app
+    restart: always
+
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: _docker/app/Dockerfile
+    volumes:
+      - ./:/var/www/
+    depends_on:
+      - database
+
+  database:
+    container_name: database
+    ports:
+      - "8001:3306"
+    image: mysql:8.0
+    volumes:
+      - ./_docker/tmp/db:/var/lib/mysql
+    command: "mysqld --character-set-server=utf8 --collation-server=utf8_unicode_ci"
+    environment:
+      MYSQL_DATABASE: lardocker
+      MYSQL_ROOT_PASSWORD: root
+    restart: always
+
+  adminer:
+    container_name: adminer
+    image: adminer
+    depends_on:
+      - database
+    restart: always
+    ports:
+      - "8002:8080"
