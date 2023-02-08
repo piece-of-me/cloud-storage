@@ -7,11 +7,9 @@
     <title>Storage</title>
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}"/>
-
-    <link href="{{ asset('css/auth.css') }}" rel="stylesheet">
-    @vite('resources/src/assets/css/main.css')
 </head>
 <body>
-@yield('content')
+<div id="app"></div>
+@vite('resources/src/main.js')
 </body>
 </html>

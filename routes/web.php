@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\ResetPasswordController;
+use App\Http\Controllers\MainIndexController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,4 @@ Route::post('/register', [RegisterController::class, 'register'])->name('registe
 Route::get('/reset', [ResetPasswordController::class, 'index'])->name('reset.index');
 Route::post('/reset', [ResetPasswordController::class, 'reset'])->name('reset.reset');
 
-Route::any('/', function () {
-    return 'main';
-})->name('main');
+Route::any('/', MainIndexController::class)->name('main');
