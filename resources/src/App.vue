@@ -2,7 +2,9 @@
 import logoUrl from 'images/logo.png';
 import folderImgUrl from 'images/folder-icon.png';
 import MainBlockHeader from '@/components/MainBlockHeader.vue';
-import { reactive, computed } from "vue";
+import { useFileStore } from '@/store/file.store.js';
+import {reactive, computed, ref, onMounted} from 'vue';
+const { uploadFile } = useFileStore();
 
 const folders = [{
   name: 'Folder',
@@ -61,6 +63,9 @@ const folders = [{
   public: true,
 }];
 
+let parentFolder = ref(null);
+let folderName = ref('');
+
 const correctFolders = computed(() => {
   return folders.map(folder => {
     folder.name = folder.name.length <= 25 ? folder.name : folder.name.slice(0, 12).trim() + ' . . . ' + folder.name.slice(-12).trim();
@@ -95,6 +100,17 @@ function onRightClickOnFolder(event) {
 
 function onLeftClickOnTable() {
   folderHeaderMenu.visible = false;
+}
+
+function createFolder() {
+  Dialog.hide();
+  uploadFile(parentFolder, {
+    name: folderName.value,
+    type: 2
+  }).then(data => {
+    console.debug(data);
+  });
+  folderName.value = '';
 }
 </script>
 
@@ -220,10 +236,13 @@ function onLeftClickOnTable() {
     width="30%"
     align-center
   >
-    <el-input v-model="input" placeholder="Please input" />
+    <el-input v-model="folderName" placeholder=""/>
     <template #footer>
       <span class="dialog-footer">
-        <el-button type="primary" @click="Dialog.hide()">
+        <el-button
+          type="primary"
+          @click="createFolder"
+        >
           Создать
         </el-button>
       </span>
