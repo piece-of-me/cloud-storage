@@ -17,13 +17,4 @@ use App\Http\Controllers\MainIndexController;
 |
 */
 
-Route::get('/login', [LoginController::class, 'index'])->name('login.index');
-Route::post('/login', [LoginController::class, 'login'])->name('login.login');
-
-Route::get('/register', [RegisterController::class, 'index'])->name('register.index');
-Route::post('/register', [RegisterController::class, 'register'])->name('register.register');
-
-Route::get('/reset', [ResetPasswordController::class, 'index'])->name('reset.index');
-Route::post('/reset', [ResetPasswordController::class, 'reset'])->name('reset.reset');
-
-Route::any('/', MainIndexController::class)->name('main');
+Route::any('{any}', MainIndexController::class)->where('any', '.*')->name('main');

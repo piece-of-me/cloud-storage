@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class ResetPasswordRequest extends FormRequest
 {
@@ -26,5 +28,9 @@ class ResetPasswordRequest extends FormRequest
             'email.email' => 'Поле "Электронная почта" должно содержать корректный адрес электронной почты',
             'email.exists' => 'Пользователь с указанным адресом электронной почты не найден',
         ];
+    }
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json($validator->errors(), 422));
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class RegisterRequest extends FormRequest
 {
@@ -26,5 +28,10 @@ class RegisterRequest extends FormRequest
             'email.email' => 'Поле "Электронная почта" должно содержать корректный адрес электронной почты',
             'email.unique' => 'Пользователь с указанным адресом электронной почты уже существует',
         ];
+    }
+
+    protected function failedValidation(Validator $validator)
+    {
+        throw new HttpResponseException(response()->json($validator->errors(), 422));
     }
 }

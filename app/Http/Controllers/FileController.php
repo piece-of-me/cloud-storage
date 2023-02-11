@@ -21,7 +21,7 @@ class FileController extends Controller
     {
 //        $user = User::find(Auth::user()->id);
 //        $files = $user->files;
-        dd('upload file');
+        dd(Auth::user());
     }
 
     public function upload(UploadRequest $request)

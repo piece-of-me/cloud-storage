@@ -8,22 +8,19 @@ use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    public function index()
-    {
-        return view('auth.login');
-    }
-
-    public function login(LoginRequest $request)
+    public function __invoke(LoginRequest $request)
     {
         $data = $request->validated();
 
         if (Auth::attempt($data)) {
             $request->session()->regenerate();
-            return redirect()->route('main');
+            return response()->json([
+                'success' => true,
+            ])->header('TOKEN', Auth::user()->createToken("API TOKEN")->plainTextToken);
         }
 
-        return back()->withErrors([
-            'auth' => 'Пользователь с указанными данными не найден'
-        ])->withInput(['email' => $data['email']]);
+        return response()->json([
+            'email' => ['Пользователь с указанными данными не найден'],
+        ], 422);
     }
 }

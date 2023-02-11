@@ -5,22 +5,17 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Jobs\Auth\StoreUserJob;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class RegisterController extends Controller
 {
-    public function index()
-    {
-        return view('auth.register');
-    }
-
-    public function register(RegisterRequest $request)
+    public function __invoke(RegisterRequest $request)
     {
         $data = $request->validated();
         StoreUserJob::dispatch($data);
 
-        return view('auth.register_success', [
-            'email' => $data['email'],
+        return response()->json([
+            'success' => true,
         ]);
     }
 }

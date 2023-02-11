@@ -9,16 +9,13 @@ use Illuminate\Http\Request;
 
 class ResetPasswordController extends Controller
 {
-    public function index()
-    {
-        return view('auth.reset');
-    }
-
-    public function reset(ResetPasswordRequest $request)
+    public function __invoke(ResetPasswordRequest $request)
     {
         $data = $request->validated();
         ResetPasswordJob::dispatch($data);
 
-        return view('auth.reset_success', $data);
+        return response()->json([
+            'success' => true,
+        ]);
     }
 }
