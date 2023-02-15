@@ -24,10 +24,6 @@ return new class extends Migration
             $table->index('file_id', 'uf_file_idx');
             $table->foreign('file_id', 'uf_file_fk')->on('files')->references('id');
 
-            $table->unsignedBigInteger('parent_id')->nullable();
-            $table->index('parent_id', 'uf_parent_idx');
-            $table->foreign('parent_id', 'uf_parent_fk')->on('files')->references('id');
-
             $table->timestamps();
         });
     }

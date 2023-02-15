@@ -4,6 +4,10 @@ import axios from '@/bootstrap';
 const URL = import.meta.env.VITE_API_APP_URL;
 
 export const useFileStore = defineStore('files', () => {
+    function getFiles() {
+        return axios.get(URL + 'files/');
+    }
+
     function uploadFile(parent, data) {
         return axios.post(URL + 'files/', {
             parent_id: parent.value,
@@ -12,6 +16,7 @@ export const useFileStore = defineStore('files', () => {
         });
     }
     return {
+        getFiles,
         uploadFile,
     };
 });

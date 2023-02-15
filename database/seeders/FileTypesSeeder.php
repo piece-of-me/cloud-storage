@@ -2,12 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\File;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
 class FileTypesSeeder extends Seeder
 {
-    private const FILE_TYPES = ['file', 'folder', 'image'];
+    private const FILE_TYPES = [
+        File::FILE => 'file',
+        File::FOLDER => 'folder',
+        File::IMAGE => 'image'
+    ];
 
     public function run(): void
     {

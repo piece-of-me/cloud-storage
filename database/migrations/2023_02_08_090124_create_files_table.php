@@ -18,7 +18,7 @@ return new class extends Migration
 
             $table->string('name', 50);
             $table->unsignedInteger('size');
-            $table->string('link');
+            $table->string('path');
             $table->unsignedInteger('views')->default(0);
             $table->unsignedInteger('downloads')->default(0);
             $table->string('public_hash')->nullable();

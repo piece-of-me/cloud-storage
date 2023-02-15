@@ -3,71 +3,21 @@ import logoUrl from 'images/logo.png';
 import folderImgUrl from 'images/folder-icon.png';
 import MainBlockHeader from '@/components/MainBlockHeader.vue';
 import { useFileStore } from '@/store/file.store.js';
-import {reactive, computed, ref, onMounted} from 'vue';
-const { uploadFile } = useFileStore();
+import { useUserStore } from "@/store/user.store";
+import { reactive, computed, ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
-const folders = [{
-  name: 'Folder',
-  type: 'folder',
-  size: '1000 bytes',
-  public: false,
-}, {
-  name: 'Folder 2',
-  type: 'folder',
-  size: '2000 bytes',
-  public: true,
-}, {
-  name: 'Folder 3',
-  type: 'folder',
-  size: '3000 bytes',
-  public: false,
-}, {
-  name: 'Folder 4',
-  type: 'folder',
-  size: '4000 bytes',
-  public: false,
-}, {
-  name: 'Folder 5',
-  type: 'folder',
-  size: '5000 bytes',
-  public: true,
-}, {
-  name: 'Folder 6',
-  type: 'folder',
-  size: '6000 bytes',
-  public: true,
-}, {
-  name: 'Folder 7',
-  type: 'folder',
-  size: '7000 bytes',
-  public: false,
-}, {
-  name: 'Folder 8',
-  type: 'folder',
-  size: '8000 bytes',
-  public: false,
-}, {
-  name: 'Folder 9',
-  type: 'folder',
-  size: '9000 bytes',
-  public: false,
-}, {
-  name: 'Folder 10',
-  type: 'folder',
-  size: '1000 bytes',
-  public: false,
-}, {
-  name: 'Folder 11',
-  type: 'folder',
-  size: '11000 bytes',
-  public: true,
-}];
+const { getFiles, uploadFile } = useFileStore();
+const { logout } = useUserStore();
+const $router = useRouter();
+
+const folders = ref([]);
 
 let parentFolder = ref(null);
 let folderName = ref('');
 
 const correctFolders = computed(() => {
-  return folders.map(folder => {
+  return folders.value.map(folder => {
     folder.name = folder.name.length <= 25 ? folder.name : folder.name.slice(0, 12).trim() + ' . . . ' + folder.name.slice(-12).trim();
     return folder;
   });
@@ -112,6 +62,20 @@ function createFolder() {
   });
   folderName.value = '';
 }
+
+function exit() {
+  logout().then(() => {
+    $router.replace({name: 'login'});
+  });
+}
+
+onMounted(() => {
+  getFiles().then(response => {
+    if (response.status === 200 && response.hasOwnProperty('data')) {
+      folders.value = response.data;
+    }
+  });
+});
 </script>
 
 <template>
@@ -157,14 +121,27 @@ function createFolder() {
           <div class="hover:bg-stone-400 hover:cursor-pointer rounded-3xl px-2 pt-1">
             <el-popover :width="400" trigger="click">
               <template #reference>
-                <el-icon id="gear">
-                  <Tools/>
+                <el-icon id="setting">
+                  <Setting/>
                 </el-icon>
               </template>
               <div>
                 <p class="text-base font-semibold">Настройки</p>
               </div>
             </el-popover>
+          </div>
+          <div class="hover:bg-stone-400 hover:cursor-pointer rounded-3xl px-2 pt-1">
+
+            <el-popconfirm
+              title="Хотите выйти?"
+              confirmButtonText="Да"
+              cancelButtonText="Нет"
+              @confirm="exit"
+            >
+              <template #reference>
+                <el-icon><House/></el-icon>
+              </template>
+            </el-popconfirm>
           </div>
         </div>
       </el-header>
@@ -213,7 +190,16 @@ function createFolder() {
                     v-if="folder.public"
                   >
                     <template #content>
-                      <p class="font-bold text-sm"><el-icon><View /></el-icon> 1 <el-icon><Download /></el-icon> 2</p>
+                      <p class="font-bold text-sm">
+                        <el-icon>
+                          <View/>
+                        </el-icon>
+                        {{ folder.views }}
+                        <el-icon>
+                          <Download/>
+                        </el-icon>
+                        {{ folder.downloads }}
+                      </p>
                     </template>
                     <el-button type="info" icon="Link" circle class="absolute right-0 bottom-4"/>
                   </el-tooltip>
@@ -251,7 +237,7 @@ function createFolder() {
 </template>
 
 <style scoped>
-#gear:active {
+#setting:active {
   transform: rotate(90deg);
   -webkit-transform: rotate(90deg);
   -ms-transform: rotate(90deg);

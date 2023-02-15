@@ -1,13 +1,13 @@
 import { defineStore } from 'pinia';
 import axios from '@/bootstrap';
 import { ref, readonly } from 'vue';
-import { useSessionStorage } from "@vueuse/core";
+import { useSessionStorage } from '@vueuse/core';
 
-const sessionStorage = useSessionStorage('userToken', null);
+const userToken = useSessionStorage('userToken', null);
 const URL = import.meta.env.VITE_API_APP_URL;
 
 export const useUserStore = defineStore('users', () => {
-    let authenticated = ref(sessionStorage.value !== null);
+    let authenticated = ref(userToken.value !== null);
 
     async function login(email, password) {
         const request = await axios.get('/sanctum/csrf-cookie');
@@ -17,7 +17,7 @@ export const useUserStore = defineStore('users', () => {
                 password,
             }).then(response => {
                 if (response.status !== 200 || !response.headers.hasOwnProperty('token')) return;
-                sessionStorage.value = response.headers.token;
+                userToken.value = response.headers.token;
                 axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.headers.token;
                 authenticated.value = true;
             });
@@ -39,10 +39,21 @@ export const useUserStore = defineStore('users', () => {
             email,
         });
     }
+
+    function logout() {
+        return axios.post(URL + 'auth/logout').then(response => {
+            if (response.status !== 200) return;
+            userToken.value = null;
+            authenticated.value = false;
+            delete (axios.defaults.headers.common['Authorization']);
+        });
+    }
+
     return {
         authenticated: readonly(authenticated),
         login,
         register,
         resetPassword,
+        logout,
     };
 });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Http\Request;
@@ -18,14 +19,6 @@ use App\Http\Controllers\FileController;
 |
 */
 
-//Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-//    return $request->user();
-//});
-
-//Route::get('/', static function() {
-//    dd('Hello from API');
-//});
-
 Route::prefix('auth')->group(static function () {
     Route::post('/login', LoginController::class)->name('auth.login');
     Route::post('/reset', ResetPasswordController::class)->name('auth.login');
@@ -33,14 +26,10 @@ Route::prefix('auth')->group(static function () {
 });
 
 Route::middleware('auth:sanctum')->group(static function () {
+    Route::post('auth/logout', LogoutController::class)->name('auth.logout');
+
     Route::prefix('files')->group(static function () {
         Route::get('/', [FileController::class, 'index'])->name('file.index');
         Route::post('/', [FileController::class, 'upload'])->name('file.upload');
     });
 });
-
-//Route::middleware('auth')->group(static function() {
-//   Route::get('/', static function() {
-//       dd('Hello from API');
-//   });
-//});

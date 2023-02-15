@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\File\UploadRequest;
+use App\Http\Resources\FileResource;
 use App\Models\File;
 use App\Models\User;
 use App\Service\FileService;
 use Illuminate\Support\Facades\Auth;
+use \Illuminate\Http\JsonResponse;
 
 class FileController extends Controller
 {
@@ -19,15 +21,16 @@ class FileController extends Controller
 
     public function index()
     {
-//        $user = User::find(Auth::user()->id);
-//        $files = $user->files;
-        dd(Auth::user());
+        $user = Auth::user();
+//        $files = $user;
+       return FileResource::collection($user->files);
+
     }
 
-    public function upload(UploadRequest $request)
+    public function upload(UploadRequest $request): JsonResponse
     {
-//        composer require tymon/jwt-auth:"dev-develop"
         $data = $request->validated();
-        $this->service->upload($data);
+        $success = $this->service->upload($data);
+        return response()->json(['success' => $success]);
     }
 }
