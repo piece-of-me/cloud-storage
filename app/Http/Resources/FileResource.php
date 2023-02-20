@@ -14,44 +14,28 @@ class FileResource extends JsonResource
      */
     public function toArray($request): array
     {
-        $data = [
+        return [
             'id' => $this->id,
             'name' => $this->name,
             'typeId' => $this->type_id,
-            'size' => $this->size,
+            'size' => $this->_formatBytes($this->size),
             'path' => $this->path,
             'public' => $this->public_hash !== null,
             'parentId' => $this->parent_id,
             'views' => $this->views,
             'downloads' => $this->downloads,
-            'createdAt' => $this->created_at,
-            'updatedAt' => $this->updated_at,
+            'createdAt' => (new \DateTime($this->created_at))->format('d.m.Y H:i'),
+            'updatedAt' => (new \DateTime($this->updated_at))->format('d.m.Y H:i'),
         ];
-        if (isset($this->content)) {
-            $data['content'] = $this->_mapFolders($this->content->toArray());
-        }
-        return $data;
     }
 
-    private function _mapFolders($folder): array
+    private function _formatBytes(int $bytes): string
     {
-        return array_map(function ($item) {
-            $result = [
-                'id' => $item['id'],
-                'name' => $item['name'],
-                'typeId' => $item['type_id'],
-                'size' => $item['size'],
-                'path' => $item['path'],
-                'parentId' => $item['parent_id'],
-                'views' => $item['views'],
-                'downloads' => $item['downloads'],
-                'createdAt' => $item['created_at'],
-                'updatedAt' => $item['updated_at'],
-            ];
-            if (isset($item['content'])) {
-                $result['content'] = $this->_mapFolders($item['content']->toArray());
-            }
-            return $result;
-        }, $folder);
+        if ($bytes == 0) return '0 Bytes';
+        $oneKB = 1024;
+        $units = ['Bytes', 'KB', 'MB', 'GB'];
+        $i = floor(log($bytes) / log($oneKB));
+
+        return floor($bytes / pow($oneKB, $i)) . ' ' . $units[$i];
     }
 }

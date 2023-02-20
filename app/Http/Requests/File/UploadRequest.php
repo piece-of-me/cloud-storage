@@ -19,7 +19,8 @@ class UploadRequest extends FormRequest
         return [
             'parent_id' => 'nullable|exists:files,id',
             'name' => 'required|string',
-            'type' => 'int|required|exists:file_types,id',
+            'type' => 'int|exists:file_types,id',
+            'file' => 'file',
         ];
     }
 

@@ -16,11 +16,11 @@ return new class extends Migration
         Schema::create('user_files', function (Blueprint $table) {
             $table->id();
 
-            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('user_id')->cascadeOnDelete();
             $table->index('user_id', 'uf_user_idx');
             $table->foreign('user_id', 'uf_post_fk')->on('users')->references('id');
 
-            $table->unsignedBigInteger('file_id');
+            $table->unsignedBigInteger('file_id')->cascadeOnDelete();
             $table->index('file_id', 'uf_file_idx');
             $table->foreign('file_id', 'uf_file_fk')->on('files')->references('id');
 

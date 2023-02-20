@@ -1,31 +1,27 @@
 <script setup>
 import logoUrl from 'images/logo.png';
-import folderImgUrl from 'images/folder-icon.png';
 import MainBlockHeader from '@/components/MainBlockHeader.vue';
+import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
 import { useFileStore } from '@/store/file.store.js';
 import { useUserStore } from "@/store/user.store";
 import { reactive, computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
-const { getFiles, uploadFile } = useFileStore();
+const { files, getFiles, uploadFile } = useFileStore();
 const { logout } = useUserStore();
 const $router = useRouter();
 
-const folders = ref([]);
-
-let parentFolder = ref(null);
-let folderName = ref('');
-
-const correctFolders = computed(() => {
-  return folders.value.map(folder => {
-    folder.name = folder.name.length <= 25 ? folder.name : folder.name.slice(0, 12).trim() + ' . . . ' + folder.name.slice(-12).trim();
-    return folder;
-  });
+const openFolders = ref([]);
+const selectedFiles = computed(() => {
+  const selectedFolder = openFolders.value.length <= 0 ? null : openFolders.value[openFolders.value.length - 1];
+  return files.data.filter(file => file?.parentId === selectedFolder?.id
+    || selectedFolder === null && file?.parentId === null);
 });
-
-const folderHeaderMenu = reactive({
-  name: '',
+let folderName = ref('');
+let uploadRef = ref(null);
+const fileInfo = reactive({
   visible: false,
+  file: {},
 });
 
 const Dialog = reactive({
@@ -38,22 +34,9 @@ const Dialog = reactive({
   },
 });
 
-function onLeftClickOnFolder(folder) {
-  folderHeaderMenu.name = folder.name;
-  folderHeaderMenu.visible = true;
-}
-
-function onRightClickOnFolder(event) {
-  console.debug('right click');
-  console.debug(event);
-}
-
-function onLeftClickOnTable() {
-  folderHeaderMenu.visible = false;
-}
-
 function createFolder() {
   Dialog.hide();
+  const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
   uploadFile(parentFolder, {
     name: folderName.value,
     type: 2
@@ -70,12 +53,38 @@ function exit() {
 }
 
 onMounted(() => {
-  getFiles().then(response => {
-    if (response.status === 200 && response.hasOwnProperty('data')) {
-      folders.value = response.data;
-    }
-  });
+  getFiles();
 });
+
+function open(folder) {
+  fileInfo.visible = false;
+  fileInfo.file = {};
+  openFolders.value.push(folder);
+}
+function goToFolder(folder) {
+  if (folder === null) {
+    openFolders.value = [];
+  }
+  const selectedFolderIndex = openFolders.value.findIndex(file => file?.id === folder.id);
+  openFolders.value = openFolders.value.slice(0, selectedFolderIndex + 1);
+}
+
+function upload(file, ref = uploadRef) {
+  const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
+
+  uploadFile(parentFolder, {
+    name: file?.name ?? null,
+    file: file.raw,
+  }).then(data => {
+    ref.value.abort();
+    ref.value.clearFiles();
+  });
+}
+
+function showFileInfo(file) {
+  fileInfo.visible = true;
+  fileInfo.file = file;
+}
 </script>
 
 <template>
@@ -87,7 +96,7 @@ onMounted(() => {
           <p class="text-3xl">Storage</p>
         </div>
 
-        <div :class="['bg-stone-600 h-full rounded-b-lg w-3/4 px-5 flex items-center', {hidden: !folderHeaderMenu.visible}]">
+        <div :class="['bg-stone-600 h-full rounded-b-lg w-3/4 px-5 flex items-center', {hidden: !fileInfo.visible}]">
           <div class="mr-3 text-white font-bold w-1/6">
             <el-popover
               placement="bottom"
@@ -97,9 +106,10 @@ onMounted(() => {
               <template #reference>
                 <el-icon><QuestionFilled /></el-icon>
               </template>
-              asdasd
+              <p><strong>Размер:</strong> {{ fileInfo.file.size }}</p>
+              <p><strong>Модификации:</strong> {{ fileInfo.file.updatedAt }}</p>
             </el-popover>
-            {{ folderHeaderMenu.name }}
+            {{ fileInfo.file.name }}
           </div>
           <div class="flex flex-row justify-between w-full">
             <div>
@@ -112,7 +122,7 @@ onMounted(() => {
               <el-button><el-icon class="mr-2"><Folder /></el-icon> Переместить</el-button>
               <el-button><el-icon class="mr-2"><DeleteFilled /></el-icon> Удалить</el-button>
               <el-button><el-icon class="mr-2"><CopyDocument /></el-icon> Копировать</el-button>
-              <el-button icon="CloseBold" circle @click="folderHeaderMenu.visible = false;"/>
+              <el-button icon="CloseBold" circle @click="fileInfo.visible = false;"/>
             </div>
           </div>
         </div>
@@ -149,12 +159,20 @@ onMounted(() => {
       <el-container class="bg-white rounded-2xl mx-5 mt-3">
         <el-aside width="200px" class="bg-stone-100 rounded-l-2xl p-3 pt-5">
           <div class="mb-3">
-            <el-button size="large" type="warning" class="w-full" style="font-size: 18px;" round>
-              <el-icon class="mr-3">
-                <Upload/>
-              </el-icon>
-              Загрузить
-            </el-button>
+            <el-upload
+              ref="uploadRef"
+              name="file"
+              :auto-upload="false"
+              :show-file-list="false"
+              :on-change="upload"
+            >
+              <el-button size="large" type="warning" class="w-full" style="font-size: 18px;" round>
+                <el-icon class="mr-3">
+                  <Upload/>
+                </el-icon>
+                Загрузить
+              </el-button>
+            </el-upload>
           </div>
           <div>
             <el-button
@@ -173,42 +191,20 @@ onMounted(() => {
         </el-aside>
         <el-container>
           <el-main>
-            <MainBlockHeader class="mb-3"/>
+            <MainBlockHeader
+              :openFolders="openFolders"
+              @go-to-folder="goToFolder"
+              class="mb-3"
+            />
 
-            <div class="flex flex-row flex-wrap" @click.self="onLeftClickOnTable">
-              <div class="w-32 hover:bg-stone-100 hover:cursor-pointer rounded-2xl pb-3 mr-3"
-                   v-for="folder in correctFolders"
-                   @click="onLeftClickOnFolder(folder)"
-                   @contextmenu.prevent="onRightClickOnFolder"
-              >
-                <div class="relative">
-                  <el-image :src="folderImgUrl" class="w-full"/>
-                  <el-tooltip
-                    class="box-item"
-                    effect="dark"
-                    placement="right"
-                    v-if="folder.public"
-                  >
-                    <template #content>
-                      <p class="font-bold text-sm">
-                        <el-icon>
-                          <View/>
-                        </el-icon>
-                        {{ folder.views }}
-                        <el-icon>
-                          <Download/>
-                        </el-icon>
-                        {{ folder.downloads }}
-                      </p>
-                    </template>
-                    <el-button type="info" icon="Link" circle class="absolute right-0 bottom-4"/>
-                  </el-tooltip>
-
-                </div>
-                <p class="text-center tracking-narrowly leading-4">{{ folder.name }}</p>
-              </div>
-            </div>
-
+            <MainWorkingPlace
+              :files="selectedFiles"
+              :loading="files.loading"
+              @open="open"
+              @create-folder="Dialog.show()"
+              @show-file-info="showFileInfo"
+              @upload-file="upload"
+             />
           </el-main>
           <el-footer>Footer</el-footer>
         </el-container>
@@ -241,5 +237,8 @@ onMounted(() => {
   transform: rotate(90deg);
   -webkit-transform: rotate(90deg);
   -ms-transform: rotate(90deg);
+}
+:deep(.el-aside .el-upload.el-upload--text) {
+  width: 100%;
 }
 </style>

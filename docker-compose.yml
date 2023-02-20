@@ -10,19 +10,20 @@ services:
       - ./_docker/nginx/conf.d/:/etc/nginx/conf.d
     ports:
       - "8000:80"
-    depends_on:
-      - app
     restart: always
 
   app:
     container_name: app
     build:
-      context: .
-      dockerfile: _docker/app/Dockerfile
+      context: ./_docker/app/
+      dockerfile: Dockerfile
     volumes:
       - ./:/var/www/
+      - ./_docker/app/php.ini:/usr/local/etc/php/php.ini
     depends_on:
+      - server
       - database
+    restart: always
 
   database:
     container_name: database

@@ -22,15 +22,16 @@ class FileController extends Controller
     public function index()
     {
         $user = Auth::user();
-//        $files = $user;
-       return FileResource::collection($user->files);
-
+        return FileResource::collection($user->files);
     }
 
     public function upload(UploadRequest $request): JsonResponse
     {
         $data = $request->validated();
-        $success = $this->service->upload($data);
-        return response()->json(['success' => $success]);
+        $result = $this->service->upload($data);
+        if ($result == null) {
+            return response()->json(status: 500);
+        }
+        return response()->json(['data' => new FileResource($result)]);
     }
 }

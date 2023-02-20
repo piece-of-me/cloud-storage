@@ -1,11 +1,19 @@
 <script>
 export default {
-  name: "MainBlockHeader"
+  name: 'MainBlockHeader'
 }
 </script>
 
 <script setup>
 import { ref } from 'vue';
+defineEmits(['goToFolder']);
+const $props = defineProps({
+  openFolders: {
+    type: Array,
+    required: true,
+  }
+});
+
 const selectedSortingOption = ref('');
 const selectedSortingType = ref(0);
 const sortingOptions = [
@@ -23,8 +31,17 @@ selectedSortingOption.value = sortingOptions[0];
 
 <template>
   <div class="flex flex-row justify-between">
-    <el-breadcrumb separator="/">
-      <el-breadcrumb-item class="text-2xl"><span class="font-semibold">Файлы</span></el-breadcrumb-item>
+    <el-breadcrumb :separator-icon="ArrowRight">
+      <el-breadcrumb-item class="text-xl cursor-pointer">
+        <span class="font-semibold" @click="$emit('goToFolder', null)">Файлы</span>
+      </el-breadcrumb-item>
+
+      <el-breadcrumb-item
+        v-for="folder in $props.openFolders"
+        class="text-xl cursor-pointer"
+      >
+        <span class="font-semibold" @click="$emit('goToFolder', folder)">{{ folder.name }}</span>
+      </el-breadcrumb-item>
     </el-breadcrumb>
     <el-dropdown trigger="click">
       <el-button type="primary">

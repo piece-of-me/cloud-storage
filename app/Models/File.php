@@ -27,4 +27,57 @@ class File extends Model
 
     protected $table = 'files';
     protected $guarded = false;
+
+    public static function getFileTypeId(string $mime): int
+    {
+        $imagesMime = [
+            'image/bmp',
+            'image/cgm',
+            'image/g3fax',
+            'image/gif',
+            'image/ief',
+            'image/jpeg',
+            'image/ktx',
+            'image/pjpeg',
+            'image/png',
+            'image/prs.btif',
+            'image/svg+xml',
+            'image/tiff',
+            'image/vnd.adobe.photoshop',
+            'image/vnd.dece.graphic',
+            'image/vnd.djvu',
+            'image/vnd.dvb.subtitle',
+            'image/vnd.dwg',
+            'image/vnd.dxf',
+            'image/vnd.fastbidsheet',
+            'image/vnd.fpx',
+            'image/vnd.fst',
+            'image/vnd.fujixerox.edmics-mmr',
+            'image/vnd.fujixerox.edmics-rlc',
+            'image/vnd.ms-modi',
+            'image/vnd.net-fpx',
+            'image/vnd.wap.wbmp',
+            'image/vnd.xiff',
+            'image/webp',
+            'image/x-citrix-jpeg',
+            'image/x-citrix-png',
+            'image/x-cmu-raster',
+            'image/x-cmx',
+            'image/x-freehand',
+            'image/x-icon',
+            'image/x-pcx',
+            'image/x-pict',
+            'image/x-png',
+            'image/x-portable-anymap',
+            'image/x-portable-bitmap',
+            'image/x-portable-graymap',
+            'image/x-portable-pixmap',
+            'image/x-rgb',
+            'image/x-xbitmap',
+            'image/x-xpixmap',
+            'image/x-xwindowdump',
+        ];
+
+        return in_array($mime, $imagesMime) ? self::IMAGE : self::FILE;
+    }
 }
