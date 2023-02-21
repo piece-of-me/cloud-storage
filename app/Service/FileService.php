@@ -7,6 +7,7 @@ use App\Models\UserFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 class FileService
 {
@@ -32,6 +33,9 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
+            if ($exception instanceof HttpResponseException) {
+                throw $exception;
+            }
         }
 
         return $result;
@@ -42,6 +46,11 @@ class FileService
         $user = Auth::user();
         $parent = isset($data['parent_id']) ? File::find($data['parent_id']) : null;
         $path = $user->login . '/' . (isset($parent) ? $parent->path . '/' . $data['name'] : $data['name']);
+        if (Storage::disk('public')->exists($path)) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Папка с таким именем уже существует',
+            ], 500));
+        }
         Storage::disk('public')->makeDirectory($path);
         $folderInfo = [
             'name' => $data['name'],
@@ -65,6 +74,11 @@ class FileService
         $parent = isset($data['parent_id']) ? File::find($data['parent_id']) : null;
         $folder = $user->login . '/' . (isset($parent) ? $parent->path . '/' : '');
         $fileName = $file->getClientOriginalName();
+        if (Storage::disk('public')->exists($folder . $fileName)) {
+            throw new HttpResponseException(response()->json([
+                'message' => 'Такой файл уже существует',
+            ], 500));
+        }
         Storage::disk('public')->putFileAs($folder, $file, $fileName, 'public');
         $info = [
             'name' => $data['name'],

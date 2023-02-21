@@ -5,7 +5,7 @@ import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
 import { useFileStore } from '@/store/file.store.js';
 import { useUserStore } from "@/store/user.store";
 import { reactive, computed, ref, onMounted } from 'vue';
-import { ElLoading } from 'element-plus';
+import { ElLoading, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 
 const { files, getFiles, uploadFile } = useFileStore();
@@ -46,8 +46,15 @@ function createFolder() {
   uploadFile(parentFolder, {
     name: folderName.value,
     type: 2
-  }).then(data => {
-    console.debug(data);
+  }).catch(response => {
+    const message = response?.response?.data?.message ?? 'Возникла ошибка в ходе выполнения запроса';
+    ElMessageBox.confirm(message, 'Ошибка', {
+      confirmButtonText: 'Ок',
+      type: 'error',
+      center: true,
+      showCancelButton: false,
+      showClose: false
+    });
   }).finally(() => {
     folderName.value = '';
     Dialog.hide();
@@ -85,9 +92,18 @@ function upload(file, ref = uploadRef) {
   uploadFile(parentFolder, {
     name: file?.name ?? null,
     file: file.raw,
-  }).then(data => {
+  }).then(() => {
     ref.value.abort();
     ref.value.clearFiles();
+  }).catch(response => {
+    const message = response?.response?.data?.message ?? 'Возникла ошибка в ходе выполнения запроса';
+    ElMessageBox.confirm(message, 'Ошибка', {
+      confirmButtonText: 'Ок',
+      type: 'error',
+      center: true,
+      showCancelButton: false,
+      showClose: false
+    });
   }).finally(() => {
     loading.close();
   });
@@ -227,7 +243,7 @@ onMounted(() => {
               @create-folder="Dialog.show()"
               @show-file-info="showFileInfo"
               @upload-file="upload"
-             />
+            />
           </el-main>
           <el-footer>Footer</el-footer>
         </el-container>

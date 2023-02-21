@@ -1,11 +1,10 @@
 import { defineStore } from 'pinia';
 import axios from '@/bootstrap';
-import { reactive, readonly } from 'vue';
+import { reactive } from 'vue';
 
 const URL = import.meta.env.VITE_API_APP_URL;
 
 export const useFileStore = defineStore('files', () => {
-    // const dataLoading = ref(true);
     const files = reactive({
         data: [],
         loading: false,
