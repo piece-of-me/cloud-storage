@@ -26,6 +26,7 @@ export default defineConfig({
             vue: 'vue/dist/vue.esm-bundler.js',
             '@': fileURLToPath(new URL('./resources/src', import.meta.url)),
             'images': fileURLToPath(new URL('./public/images', import.meta.url)),
+            'svg': fileURLToPath(new URL('./public/svg', import.meta.url)),
         },
     },
 });

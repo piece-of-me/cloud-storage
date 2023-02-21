@@ -7,6 +7,7 @@ export default {
 <script setup>
 import folderImgUrl from 'images/folder-icon.png';
 import ContextMenu from '@/components/ContextMenu.vue';
+import { getExtensionImage } from '@/utils/extensions.js';
 import { reactive, ref } from 'vue';
 
 const $emit = defineEmits(['open', 'createFolder', 'uploadFile', 'showFileInfo']);
@@ -42,18 +43,30 @@ const clickHandler = {
   leftClick(file) {
     this.type = 'leftClick';
     setTimeout(() => {
-      if (this.type === 'dbClick') return;
+      if (this.type !== 'leftClick') return;
       $emit('showFileInfo', file);
+      this.type = '';
     }, 300);
   },
   dbClick(file) {
     this.type = 'dbClick';
     $emit('open', file);
+    this.type = '';
   },
 };
 
 function onUploadFile(file) {
   $emit('uploadFile', file, uploadRef)
+}
+function getFileLogoUrl(file) {
+  switch (+file.typeId) {
+    case 1:
+      return getExtensionImage(file.extension);
+    case 2:
+      return folderImgUrl;
+    case 3:
+      return file.path;
+  }
 }
 </script>
 
@@ -73,8 +86,8 @@ function onUploadFile(file) {
            @dblclick="clickHandler.dbClick(file)"
            @contextmenu.prevent="contextMenu.show"
       >
-        <div class="relative">
-          <el-image :src="folderImgUrl" class="w-full"/>
+        <div class="relative h-36">
+          <el-image :src="getFileLogoUrl(file)" class="w-full h-32" fit="contain"/>
           <el-tooltip
             class="box-item"
             effect="dark"

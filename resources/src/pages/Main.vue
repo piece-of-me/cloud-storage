@@ -5,6 +5,7 @@ import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
 import { useFileStore } from '@/store/file.store.js';
 import { useUserStore } from "@/store/user.store";
 import { reactive, computed, ref, onMounted } from 'vue';
+import { ElLoading } from 'element-plus';
 import { useRouter } from 'vue-router';
 
 const { files, getFiles, uploadFile } = useFileStore();
@@ -14,8 +15,12 @@ const $router = useRouter();
 const openFolders = ref([]);
 const selectedFiles = computed(() => {
   const selectedFolder = openFolders.value.length <= 0 ? null : openFolders.value[openFolders.value.length - 1];
-  return files.data.filter(file => file?.parentId === selectedFolder?.id
-    || selectedFolder === null && file?.parentId === null);
+  return files.data
+    .filter(file => file?.parentId === selectedFolder?.id || selectedFolder === null && file?.parentId === null)
+    .map(file => {
+      file.name = file.name.length <= 25 ? file.name : file.name.slice(0, 12).trim() + ' . . . ' + file.name.slice(-12).trim();
+      return file;
+    });
 });
 let folderName = ref('');
 let uploadRef = ref(null);
@@ -26,6 +31,7 @@ const fileInfo = reactive({
 
 const Dialog = reactive({
   visible: false,
+  process: false,
   show() {
     this.visible = true;
   },
@@ -35,15 +41,18 @@ const Dialog = reactive({
 });
 
 function createFolder() {
-  Dialog.hide();
   const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
+  Dialog.process = true;
   uploadFile(parentFolder, {
     name: folderName.value,
     type: 2
   }).then(data => {
     console.debug(data);
+  }).finally(() => {
+    folderName.value = '';
+    Dialog.hide();
+    Dialog.process = false;
   });
-  folderName.value = '';
 }
 
 function exit() {
@@ -51,10 +60,6 @@ function exit() {
     $router.replace({name: 'login'});
   });
 }
-
-onMounted(() => {
-  getFiles();
-});
 
 function open(folder) {
   fileInfo.visible = false;
@@ -71,6 +76,11 @@ function goToFolder(folder) {
 
 function upload(file, ref = uploadRef) {
   const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
 
   uploadFile(parentFolder, {
     name: file?.name ?? null,
@@ -78,6 +88,8 @@ function upload(file, ref = uploadRef) {
   }).then(data => {
     ref.value.abort();
     ref.value.clearFiles();
+  }).finally(() => {
+    loading.close();
   });
 }
 
@@ -85,6 +97,17 @@ function showFileInfo(file) {
   fileInfo.visible = true;
   fileInfo.file = file;
 }
+
+onMounted(() => {
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Loading',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+  getFiles().finally(() => {
+    loading.close();
+  });
+});
 </script>
 
 <template>
@@ -223,6 +246,7 @@ function showFileInfo(file) {
       <span class="dialog-footer">
         <el-button
           type="primary"
+          :loading="Dialog.process"
           @click="createFolder"
         >
           Создать

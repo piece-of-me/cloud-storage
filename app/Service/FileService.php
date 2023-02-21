@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Jobs\Auth\StoreUserJob;
 use App\Models\File;
 use App\Models\UserFile;
 use Illuminate\Support\Facades\Auth;
@@ -62,14 +61,16 @@ class FileService
     private function _uploadFile(array $data): ?File
     {
         $user = Auth::user();
+        $file = $data['file'];
         $parent = isset($data['parent_id']) ? File::find($data['parent_id']) : null;
         $folder = $user->login . '/' . (isset($parent) ? $parent->path . '/' : '');
-        $fileName = $data['file']->getClientOriginalName();
-        Storage::disk('public')->putFileAs($folder, $data['file'], $fileName, 'private');
+        $fileName = $file->getClientOriginalName();
+        Storage::disk('public')->putFileAs($folder, $file, $fileName, 'public');
         $info = [
             'name' => $data['name'],
             'type_id' => $data['type'],
-            'size' => $data['file']->getSize(),
+            'size' => $file->getSize(),
+            'extension' => $file->extension(),
             'path' => $folder . $data['name'],
             'parent_id' => $parent->id ?? null,
         ];
@@ -85,10 +86,10 @@ class FileService
         return $newFile;
     }
 
-    private function _updateParentFoldersSize(int $parentId, int $size, array &$files): void
+    private function _updateParentFoldersSize(int $parentId, int $size, array &$files, string $operation = 'upload'): void
     {
         $parent = File::find($parentId);
-        $parent->update(['size' => $parent->size + $size]);
+        $parent->update(['size' => $operation == 'upload' ? $parent->size + $size : $parent->size - $size]);
         if (isset($parent->parent_id)) {
             $this->_updateParentFoldersSize($parent->parent_id, $size, $files);
         }
