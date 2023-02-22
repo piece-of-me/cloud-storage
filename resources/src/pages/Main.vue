@@ -2,13 +2,14 @@
 import logoUrl from 'images/logo.png';
 import MainBlockHeader from '@/components/MainBlockHeader.vue';
 import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
+import MainFileInfoBlock from '@/components/MainFileInfoBlock.vue';
 import { useFileStore } from '@/store/file.store.js';
-import { useUserStore } from "@/store/user.store";
+import { useUserStore } from '@/store/user.store';
 import { reactive, computed, ref, onMounted } from 'vue';
 import { ElLoading, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
 
-const { files, getFiles, uploadFile } = useFileStore();
+const { files, getFiles, createFolder: create, uploadFile } = useFileStore();
 const { logout } = useUserStore();
 const $router = useRouter();
 
@@ -18,7 +19,7 @@ const selectedFiles = computed(() => {
   return files.data
     .filter(file => file?.parentId === selectedFolder?.id || selectedFolder === null && file?.parentId === null)
     .map(file => {
-      file.name = file.name.length <= 25 ? file.name : file.name.slice(0, 12).trim() + ' . . . ' + file.name.slice(-12).trim();
+      file.shortName = file.name.length <= 25 ? file.name : file.name.slice(0, 12).trim() + ' . . . ' + file.name.slice(-12).trim();
       return file;
     });
 });
@@ -43,10 +44,7 @@ const Dialog = reactive({
 function createFolder() {
   const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
   Dialog.process = true;
-  uploadFile(parentFolder, {
-    name: folderName.value,
-    type: 2
-  }).catch(response => {
+  create(parentFolder, folderName.value).catch(response => {
     const message = response?.response?.data?.message ?? 'Возникла ошибка в ходе выполнения запроса';
     ElMessageBox.confirm(message, 'Ошибка', {
       confirmButtonText: 'Ок',
@@ -81,7 +79,8 @@ function goToFolder(folder) {
   openFolders.value = openFolders.value.slice(0, selectedFolderIndex + 1);
 }
 
-function upload(file, ref = uploadRef) {
+function upload(file) {
+  
   const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
   const loading = ElLoading.service({
     lock: true,
@@ -92,11 +91,8 @@ function upload(file, ref = uploadRef) {
   uploadFile(parentFolder, {
     name: file?.name ?? null,
     file: file.raw,
-  }).then(() => {
-    ref.value.abort();
-    ref.value.clearFiles();
-  }).catch(response => {
-    const message = response?.response?.data?.message ?? 'Возникла ошибка в ходе выполнения запроса';
+  }).catch(error => {
+    const message = error?.response?.data?.message ?? 'Возникла ошибка в ходе выполнения запроса';
     ElMessageBox.confirm(message, 'Ошибка', {
       confirmButtonText: 'Ок',
       type: 'error',
@@ -135,36 +131,11 @@ onMounted(() => {
           <p class="text-3xl">Storage</p>
         </div>
 
-        <div :class="['bg-stone-600 h-full rounded-b-lg w-3/4 px-5 flex items-center', {hidden: !fileInfo.visible}]">
-          <div class="mr-3 text-white font-bold w-1/6">
-            <el-popover
-              placement="bottom"
-              :width="200"
-              trigger="hover"
-            >
-              <template #reference>
-                <el-icon><QuestionFilled /></el-icon>
-              </template>
-              <p><strong>Размер:</strong> {{ fileInfo.file.size }}</p>
-              <p><strong>Модификации:</strong> {{ fileInfo.file.updatedAt }}</p>
-            </el-popover>
-            {{ fileInfo.file.name }}
-          </div>
-          <div class="flex flex-row justify-between w-full">
-            <div>
-              <el-button type="info"><el-icon class="mr-2"><Share /></el-icon> Поделиться</el-button>
-              <el-button type="info"><el-icon class="mr-2"><Download /></el-icon> Скачать</el-button>
-            </div>
-
-            <div>
-              <el-button><el-icon class="mr-2"><Edit /></el-icon> Переименовать</el-button>
-              <el-button><el-icon class="mr-2"><Folder /></el-icon> Переместить</el-button>
-              <el-button><el-icon class="mr-2"><DeleteFilled /></el-icon> Удалить</el-button>
-              <el-button><el-icon class="mr-2"><CopyDocument /></el-icon> Копировать</el-button>
-              <el-button icon="CloseBold" circle @click="fileInfo.visible = false;"/>
-            </div>
-          </div>
-        </div>
+        <MainFileInfoBlock
+          :visible="fileInfo.visible"
+          :file="fileInfo.file"
+          @hide="fileInfo.visible = false"
+        />
 
         <div class="flex items-center text-2xl">
           <div class="hover:bg-stone-400 hover:cursor-pointer rounded-3xl px-2 pt-1">

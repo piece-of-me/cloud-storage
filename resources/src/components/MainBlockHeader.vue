@@ -14,8 +14,9 @@ const $props = defineProps({
   }
 });
 
-const selectedSortingOption = ref('');
-const selectedSortingType = ref(0);
+let selectedSortingOption = ref('');
+let selectedSortingType = ref(0);
+const grouped = ref(true);
 const sortingOptions = [
   'По названию',
   'По размеру',
@@ -66,6 +67,9 @@ selectedSortingOption.value = sortingOptions[0];
             :divided="index === 0">
             <el-icon v-if="selectedSortingType === index"><Select/></el-icon>
             {{ type }}
+          </el-dropdown-item>
+          <el-dropdown-item divided>
+            <el-checkbox v-model="grouped" label="Группировать" size="small"/>
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>

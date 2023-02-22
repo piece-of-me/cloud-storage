@@ -8,7 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int id
  * @property string name
+ * @property int type_id
  * @property int size
+ * @property string extension
  * @property string path
  * @property null|int parent_id
  * @property int views

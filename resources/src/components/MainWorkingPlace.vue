@@ -56,7 +56,7 @@ const clickHandler = {
 };
 
 function onUploadFile(file) {
-  $emit('uploadFile', file, uploadRef)
+  $emit('uploadFile', file)
 }
 function getFileLogoUrl(file) {
   switch (+file.typeId) {
@@ -110,7 +110,7 @@ function getFileLogoUrl(file) {
           </el-tooltip>
 
         </div>
-        <p class="text-center tracking-narrowly leading-4">{{ file.name }}</p>
+        <p class="text-center tracking-narrowly leading-4">{{ file.shortName }}</p>
       </div>
     </div>
     <div
