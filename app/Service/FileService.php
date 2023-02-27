@@ -96,10 +96,10 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
+            Log::error('Ошибка загрузки файла - ' . $exception->getMessage());
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
-            Log::error('Ошибка загрузки файла - ' . $exception->getMessage());
         }
         return $result;
     }
@@ -132,6 +132,45 @@ class FileService
         return $file;
     }
 
+    public function move(File $file, ?File $newParent): ?array
+    {
+        $result = null;
+        try {
+            DB::beginTransaction();
+
+            $files = [];
+            $newPath = (isset($newParent) ? $newParent->path : Auth::user()->login) . '/' . $file->name;
+
+            if (Storage::disk('public')->exists($newPath)) {
+                throw new HttpResponseException(response()->json([
+                    'message' => $file->type_id === File::FOLDER ? 'Папка уже существую' : 'Файл уже существует',
+                ], 500));
+            }
+
+            Storage::disk('public')->move($file->path, $newPath);
+            if (isset($file->parent_id)) {
+                $this->_updateParentFoldersSize($file->parent_id, $file->size, $files, self::DECREASE_SIZE);
+            }
+            $file->update([
+                'parent_id' => $newParent?->id,
+                'path' => $newPath,
+            ]);
+            if (isset($newParent)) {
+                $this->_updateParentFoldersSize($file->parent_id, $file->size, $files);
+            }
+
+            $result = [$file, $files];
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Ошибка при перемещении файла - ' . $exception->getMessage());
+            if ($exception instanceof HttpResponseException) {
+                throw $exception;
+            }
+        }
+        return $result;
+    }
+
     public function delete(File $file): ?array
     {
         $files = [];
@@ -142,7 +181,7 @@ class FileService
             }
             if ($file->type_id === File::FOLDER) {
                 Storage::disk('public')->deleteDirectory($file->path);
-                $this->_deleteAttachedFiles($file);
+                $this->_deleteNestedFiles($file);
             } else {
                 Storage::disk('public')->delete($file->path);
             }
@@ -168,13 +207,13 @@ class FileService
         }
     }
 
-    private function _deleteAttachedFiles(File $file): void
+    private function _deleteNestedFiles(File $file): void
     {
         $user = Auth::user();
         $attachedFiles = $user->files->filter(fn($curFile) => $curFile->parent_id == $file->id);
         $attachedFiles->each(function ($attachedFile) use ($user) {
             if ($attachedFile->type_id == File::FOLDER) {
-                $this->_deleteAttachedFiles($attachedFile);
+                $this->_deleteNestedFiles($attachedFile);
             }
             $relationship = UserFile::where('user_id', '=', $user->id)->where('file_id', '=', $attachedFile->id)->get();
             $relationship->first()->delete();

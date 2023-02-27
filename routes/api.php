@@ -4,7 +4,6 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\ResetPasswordController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FileController;
 
@@ -32,7 +31,8 @@ Route::middleware('auth:sanctum')->group(static function () {
         Route::get('/', [FileController::class, 'index'])->name('file.index');
         Route::post('/upload', [FileController::class, 'upload'])->name('file.upload');
         Route::post('/create', [FileController::class, 'create'])->name('file.create');
-        Route::post('/{file}/rename', [FileController::class, 'rename'])->name('file.rename');
-        Route::post('/{file}/delete', [FileController::class, 'delete'])->name('file.delete');
+        Route::patch('/{file}/rename', [FileController::class, 'rename'])->name('file.rename');
+        Route::patch('/{file}/move/{newParent?}', [FileController::class, 'move'])->name('file.move');
+        Route::delete('/{file}/delete', [FileController::class, 'delete'])->name('file.delete');
     });
 });

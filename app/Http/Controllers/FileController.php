@@ -58,6 +58,18 @@ class FileController extends Controller
         return response()->json(['file' => new FileResource($updatedFile)]);
     }
 
+    public function move(File $file, File $newParent = null): JsonResponse
+    {
+        list($newFile, $updatedFolders) = $this->service->move($file, $newParent);
+        if (isset($newFile, $updatedFolders)) {
+            return response()->json([
+                'file' => new FileResource($newFile),
+                'updatedFolders' => sizeof($updatedFolders) > 0 ? FileResource::collection($updatedFolders) : null,
+            ]);
+        }
+        return response()->json(status: 500);
+    }
+
     public function delete(File $file): JsonResponse
     {
         $files = $this->service->delete($file);

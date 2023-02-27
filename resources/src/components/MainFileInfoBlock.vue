@@ -5,12 +5,13 @@ export default {
 </script>
 
 <script setup>
+import MoveDialogBlock from '@/components/MoveDialogBlock.vue';
 import { ref, computed, reactive } from 'vue';
-import { ElLoading } from 'element-plus';
+import { ElLoading, ElMessageBox } from 'element-plus';
 import { useFileStore } from '@/store/file.store';
-const { renameFile, deleteFile } = useFileStore();
+const { getFilesByParentId, renameFile, moveFile, deleteFile } = useFileStore();
 
-const $emits = defineEmits(['hide']);
+const $emit = defineEmits(['hide']);
 const $props = defineProps({
   file: {
     type: Object,
@@ -23,7 +24,7 @@ const $props = defineProps({
 });
 let newName = ref('');
 
-const Dialog = reactive({
+const RenameDialog = reactive({
   visible: false,
   process: false,
   show() {
@@ -36,34 +37,65 @@ const Dialog = reactive({
 });
 
 function rename() {
-  Dialog.process = true;
+  RenameDialog.process = true;
   renameFile($props.file.id, newName.value).finally(() => {
-    Dialog.hide();
-    Dialog.process = false;
-    $emits('hide');
+    RenameDialog.hide();
+    RenameDialog.process = false;
+    $emit('hide');
   });
 }
 
 function remove() {
   const loading = ElLoading.service({
     lock: true,
-    text: 'Loading',
+    text: 'Удаление',
     background: 'rgba(0, 0, 0, 0.7)',
   });
   deleteFile($props.file.id).finally(() => {
     loading.close();
-    $emits('hide');
+    $emit('hide');
   });
 }
 
 function hide() {
   newName.value = '';
-  $emits('hide');
+  $emit('hide');
 }
 
 const deleteTitle = computed(() => {
   return 'Удалить ' + ($props.file.typeId === 2 ? 'папку' : 'файл');
 });
+
+const MoveDialog = reactive({
+  visible: false,
+  process: false,
+  show() {
+    this.visible = true;
+  },
+  hide() {
+    this.visible = false;
+  },
+});
+
+function startMoving(id) {
+  MoveDialog.process = true;
+  moveFile($props.file.id, id).then(() => {
+    MoveDialog.hide();
+    $emit('hide');
+  }).catch(error => {
+    const message = error.response?.data?.message ?? 'Файл уже существует';
+    ElMessageBox.alert(message, 'Ошибка при перемещении', {
+      showConfirmButton: false,
+      showClose: false,
+      closeOnClickModal: true,
+      closeOnPressEscape: true,
+      center: true,
+    });
+  }).finally(() => {
+    MoveDialog.process = false;
+  });
+}
+
 </script>
 
 <template>
@@ -89,10 +121,12 @@ const deleteTitle = computed(() => {
       </div>
 
       <div>
-        <el-button @click="Dialog.show()">
+        <el-button @click="RenameDialog.show()">
           <el-icon class="mr-2"><Edit /></el-icon> Переименовать
         </el-button>
-        <el-button><el-icon class="mr-2"><Folder /></el-icon> Переместить</el-button>
+        <el-button @click="MoveDialog.show()">
+          <el-icon class="mr-2"><Folder /></el-icon> Переместить
+        </el-button>
         <el-popconfirm
           :title="deleteTitle"
           confirm-button-text="Да"
@@ -111,7 +145,7 @@ const deleteTitle = computed(() => {
     </div>
 
     <el-dialog
-      v-model="Dialog.visible"
+      v-model="RenameDialog.visible"
       title="Введите новое название"
       width="30%"
       align-center
@@ -121,7 +155,7 @@ const deleteTitle = computed(() => {
       <span class="dialog-footer">
         <el-button
           type="primary"
-          :loading="Dialog.process"
+          :loading="RenameDialog.process"
           @click="rename"
         >
           Переименовать
@@ -129,6 +163,15 @@ const deleteTitle = computed(() => {
       </span>
       </template>
     </el-dialog>
+
+    <MoveDialogBlock
+      :visibility="MoveDialog.visible"
+      :fileId="file.id"
+      :inProcess="MoveDialog.process"
+      @hide="MoveDialog.hide()"
+      @startMoving="startMoving"
+
+    />
   </div>
 </template>
 

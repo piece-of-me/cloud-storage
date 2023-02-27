@@ -10,6 +10,11 @@ export const useFileStore = defineStore('files', () => {
         loading: false,
         error: '',
     });
+
+    function getFoldersByParentId(parentId) {
+        return files.data.filter(file => file.parentId === parentId && file.typeId === 2);
+    }
+
     function getFiles() {
         return axios.get(URL + 'files/').then(response => {
             if (response.status === 200 && response.hasOwnProperty('data')) {
@@ -56,7 +61,7 @@ export const useFileStore = defineStore('files', () => {
     }
 
     function renameFile(id, name) {
-        return axios.post(`${URL}files/${id}/rename`, {
+        return axios.patch(`${URL}files/${id}/rename`, {
             name,
         }).then(response => {
             const file = response.data.file;
@@ -70,8 +75,29 @@ export const useFileStore = defineStore('files', () => {
         });
     }
 
+    function moveFile(id, newParentId) {
+        const parent = newParentId ? newParentId : '';
+        return axios.patch(`${URL}files/${id}/move/${parent}`).then(response => {
+            if (response.status === 200) {
+                if (response.data?.file) {
+                    const file = response.data.file;
+                    for (let i in files.data) {
+                        if (files.data[i].id === file.id) {
+                            files.data[i] = file;
+                            break;
+                        }
+                    }
+                }
+                if (response.data?.updatedFolders) {
+                    files.data = updateFoldersInfo(response.data.updatedFolders);
+                }
+            }
+            return response;
+        });
+    }
+
     function deleteFile(id) {
-        return axios.post(`${URL}files/${id}/delete`).then(response => {
+        return axios.delete(`${URL}files/${id}/delete`).then(response => {
             if (response.status === 200) {
                 files.data = files.data.filter(file => file.id !== id);
                 if (response.data?.updatedFolders) {
@@ -101,10 +127,12 @@ export const useFileStore = defineStore('files', () => {
 
     return {
         files,
+        getFoldersByParentId,
         getFiles,
         createFolder,
         uploadFile,
         renameFile,
+        moveFile,
         deleteFile,
     };
 });
