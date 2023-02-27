@@ -1,12 +1,12 @@
 <script>
 export default {
-  name: 'MoveDialog',
+  name: 'DirectoryTreeDialog',
 };
 </script>
 <script setup>
 import DirectoryTree from '@/components/DirectoryTree.vue';
-import { ref } from "vue";
-defineEmits(['hide', 'startMoving']);
+import { ref } from 'vue';
+defineEmits(['hide', 'confirm']);
 defineProps({
   visibility: {
     type: Boolean,
@@ -19,6 +19,10 @@ defineProps({
   inProcess: {
     type: Boolean,
     required: true,
+  },
+  type: {
+    type: Number,
+    required: true,
   }
 });
 const selectedFolderId = ref(undefined);
@@ -30,7 +34,7 @@ function selectFolder(id) {
 <template>
   <el-dialog
     v-model="$props.visibility"
-    title="Куда переместить?"
+    :title="type === 1 ? 'Куда копировать?' : 'Куда переместить?'"
     width="30%"
     @close="$emit('hide')"
     align-center
@@ -47,9 +51,9 @@ function selectFolder(id) {
         type="primary"
         :disabled="selectedFolderId === undefined"
         :loading="inProcess"
-        @click="$emit('startMoving', selectedFolderId)"
+        @click="$emit('confirm', selectedFolderId)"
       >
-        Переместить
+        {{ type === 1 ? 'Копировать' : 'Переместить' }}
       </el-button>
     </template>
   </el-dialog>

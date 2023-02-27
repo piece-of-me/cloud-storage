@@ -1,15 +1,15 @@
 <script>
 export default {
-  name: 'FileInfoBlock'
+  name: 'MainFileInfoBlock'
 };
 </script>
 
 <script setup>
-import MoveDialogBlock from '@/components/MoveDialogBlock.vue';
+import DirectoryTreeDialog from '@/components/DirectoryTreeDialog.vue';
 import { ref, computed, reactive } from 'vue';
 import { ElLoading, ElMessageBox } from 'element-plus';
 import { useFileStore } from '@/store/file.store';
-const { getFilesByParentId, renameFile, moveFile, deleteFile } = useFileStore();
+const { renameFile, moveFile, copyFile, deleteFile } = useFileStore();
 
 const $emit = defineEmits(['hide']);
 const $props = defineProps({
@@ -66,25 +66,31 @@ const deleteTitle = computed(() => {
   return 'Удалить ' + ($props.file.typeId === 2 ? 'папку' : 'файл');
 });
 
-const MoveDialog = reactive({
+const DirectoryTreeDialogModal = reactive({
   visible: false,
   process: false,
-  show() {
+  type: null,
+  /** @values [1 - 'copy'(Копирование), 2 - 'move'(Перемещение)] */
+  show(type) {
+    this.type = type;
     this.visible = true;
   },
   hide() {
+    this.type = null;
     this.visible = false;
   },
 });
 
-function startMoving(id) {
-  MoveDialog.process = true;
-  moveFile($props.file.id, id).then(() => {
-    MoveDialog.hide();
+function confirm(id) {
+  DirectoryTreeDialogModal.process = true;
+  const method = DirectoryTreeDialogModal.type === 1 ? copyFile : moveFile;
+  method($props.file.id, id).then(() => {
+    DirectoryTreeDialogModal.hide();
     $emit('hide');
   }).catch(error => {
     const message = error.response?.data?.message ?? 'Файл уже существует';
-    ElMessageBox.alert(message, 'Ошибка при перемещении', {
+    const title = DirectoryTreeDialogModal.type === 1 ? 'Ошибка при копировании' : 'Ошибка при перемещении';
+    ElMessageBox.alert(message, title, {
       showConfirmButton: false,
       showClose: false,
       closeOnClickModal: true,
@@ -92,7 +98,7 @@ function startMoving(id) {
       center: true,
     });
   }).finally(() => {
-    MoveDialog.process = false;
+    DirectoryTreeDialogModal.process = false;
   });
 }
 
@@ -124,7 +130,7 @@ function startMoving(id) {
         <el-button @click="RenameDialog.show()">
           <el-icon class="mr-2"><Edit /></el-icon> Переименовать
         </el-button>
-        <el-button @click="MoveDialog.show()">
+        <el-button @click="DirectoryTreeDialogModal.show(2)">
           <el-icon class="mr-2"><Folder /></el-icon> Переместить
         </el-button>
         <el-popconfirm
@@ -139,7 +145,9 @@ function startMoving(id) {
             </el-button>
           </template>
         </el-popconfirm>
-        <el-button><el-icon class="mr-2"><CopyDocument /></el-icon> Копировать</el-button>
+        <el-button @click="DirectoryTreeDialogModal.show(1)">
+          <el-icon class="mr-2"><CopyDocument /></el-icon> Копировать
+        </el-button>
         <el-button icon="CloseBold" circle @click="hide"/>
       </div>
     </div>
@@ -164,13 +172,13 @@ function startMoving(id) {
       </template>
     </el-dialog>
 
-    <MoveDialogBlock
-      :visibility="MoveDialog.visible"
+    <DirectoryTreeDialog
+      :visibility="DirectoryTreeDialogModal.visible"
       :fileId="file.id"
-      :inProcess="MoveDialog.process"
-      @hide="MoveDialog.hide()"
-      @startMoving="startMoving"
-
+      :inProcess="DirectoryTreeDialogModal.process"
+      :type="DirectoryTreeDialogModal.type"
+      @hide="DirectoryTreeDialogModal.hide()"
+      @confirm="confirm"
     />
   </div>
 </template>

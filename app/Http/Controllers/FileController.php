@@ -70,6 +70,18 @@ class FileController extends Controller
         return response()->json(status: 500);
     }
 
+    public function copy(File $file, File $newParent = null): JsonResponse
+    {
+        list($copiedFiles, $updatedFiles) = $this->service->copy($file, $newParent);
+        if (isset($copiedFiles, $updatedFiles)) {
+            return response()->json([
+                'copiedFiles' => FileResource::collection($copiedFiles),
+                'updatedFiles' => FileResource::collection($updatedFiles),
+            ]);
+        }
+        return response()->json(status: 500);
+    }
+
     public function delete(File $file): JsonResponse
     {
         $files = $this->service->delete($file);

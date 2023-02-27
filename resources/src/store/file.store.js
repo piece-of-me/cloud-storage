@@ -96,6 +96,23 @@ export const useFileStore = defineStore('files', () => {
         });
     }
 
+    function copyFile(id, parentId) {
+        const parent = parentId ? parentId : '';
+        return axios.patch(`${URL}files/${id}/copy/${parent}`).then(response => {
+            if (response.status === 200) {
+                if (response.data?.copiedFiles) {
+                    response.data.copiedFiles.forEach(file => {
+                        files.data.push(file);
+                    });
+                }
+                if (response.data?.updatedFiles) {
+                    files.data = updateFoldersInfo(response.data.updatedFiles);
+                }
+            }
+            return response;
+        });
+    }
+
     function deleteFile(id) {
         return axios.delete(`${URL}files/${id}/delete`).then(response => {
             if (response.status === 200) {
@@ -133,6 +150,7 @@ export const useFileStore = defineStore('files', () => {
         uploadFile,
         renameFile,
         moveFile,
+        copyFile,
         deleteFile,
     };
 });

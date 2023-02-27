@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File as FileSystem;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 class FileService
@@ -143,7 +144,7 @@ class FileService
 
             if (Storage::disk('public')->exists($newPath)) {
                 throw new HttpResponseException(response()->json([
-                    'message' => $file->type_id === File::FOLDER ? 'Папка уже существую' : 'Файл уже существует',
+                    'message' => $file->type_id === File::FOLDER ? 'Папка уже существует' : 'Файл уже существует',
                 ], 500));
             }
 
@@ -171,6 +172,69 @@ class FileService
         return $result;
     }
 
+    public function copy(File $fileToCopy, ?File $newParent): ?array
+    {
+        $result = null;
+        try {
+            DB::beginTransaction();
+
+            $files = [];
+            $user = Auth::user();
+            $newPath = (isset($newParent) ? $newParent->path : $user->login) . '/' . $fileToCopy->name;
+            $newParentId = $newParent?->id;
+
+            if (Storage::disk('public')->exists($newPath)) {
+                throw new HttpResponseException(response()->json([
+                    'message' => $fileToCopy->type_id === File::FOLDER ? 'Папка уже существует' : 'Файл уже существует',
+                ], 500));
+            }
+
+            FileSystem::copyDirectory(storage_path('public/' . $fileToCopy->path), storage_path('public/' . $newPath));
+            if ($fileToCopy->type_id == File::FOLDER) {
+                $info = [
+                    'name' => $fileToCopy->name,
+                    'type_id' => $fileToCopy->type_id,
+                    'size' => $fileToCopy->size,
+                    'path' => $fileToCopy->path,
+                    'parent_id' => $newParentId,
+                ];
+            } else {
+                $info = [
+                    'name' => $fileToCopy->name,
+                    'type_id' => $fileToCopy->type_id,
+                    'size' => $fileToCopy->size,
+                    'extension' => $fileToCopy->extension,
+                    'path' => $fileToCopy->path,
+                    'parent_id' => $newParentId,
+                ];
+            }
+            $file = File::create($info);
+            UserFile::create([
+                'user_id' => $user->id,
+                'file_id' => $file->id,
+            ]);
+
+            if ($fileToCopy->type_id == File::FOLDER) {
+                $this->_copyNestedFiles($file, $fileToCopy, $files);
+            }
+            $updatedFiles = [];
+            if ($file->size > 0 && isset($file->parent_id)) {
+                $this->_updateParentFoldersSize($file->parent_id, $file->size, $updatedFiles);
+            }
+            $files[] = $file;
+            $result = [$files, $updatedFiles];
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Ошибка при копировании файла - ' . $exception->getMessage());
+            if ($exception instanceof HttpResponseException) {
+                throw $exception;
+            }
+        }
+
+        return $result;
+    }
+
     public function delete(File $file): ?array
     {
         $files = [];
@@ -179,7 +243,7 @@ class FileService
             if ($file->size > 0 && isset($file->parent_id)) {
                 $this->_updateParentFoldersSize($file->parent_id, $file->size, $files, self::DECREASE_SIZE);
             }
-            if ($file->type_id === File::FOLDER) {
+            if ($file->type_id == File::FOLDER) {
                 Storage::disk('public')->deleteDirectory($file->path);
                 $this->_deleteNestedFiles($file);
             } else {
@@ -201,10 +265,35 @@ class FileService
     {
         $parent = File::find($parentId);
         $files[] = $parent;
-        $parent->update(['size' => $operation === self::INCREASE_SIZE ? $parent->size + $size : $parent->size - $size]);
+        $size = $operation === self::INCREASE_SIZE ? $parent->size + $size : $parent->size - $size;
+        $parent->update(['size' => max($size, 0)]);
         if (isset($parent->parent_id)) {
             $this->_updateParentFoldersSize($parent->parent_id, $size, $files, $operation);
         }
+    }
+
+    private function _copyNestedFiles(File $newFile, File $oldFile, array &$files): void
+    {
+        $user = Auth::user();
+        $attachedFiles = $user->files->filter(fn($curFile) => $curFile->parent_id == $oldFile->id);
+        $attachedFiles->each(function ($attachedFile) use ($user, $newFile, $oldFile, &$files) {
+            if ($attachedFile->type_id == File::FOLDER) {
+                $this->_copyNestedFiles($newFile, $oldFile, $files);
+            }
+            $createdFile = File::create([
+                'name' => $attachedFile->name,
+                'type_id' => $attachedFile->type_id,
+                'size' => $attachedFile->size,
+                'extension' => $attachedFile->extension,
+                'path' => $attachedFile->path,
+                'parent_id' => $newFile->id,
+            ]);
+            UserFile::create([
+                'user_id' => $user->id,
+                'file_id' => $createdFile->id,
+            ]);
+            $files[] = $createdFile;
+        });
     }
 
     private function _deleteNestedFiles(File $file): void
