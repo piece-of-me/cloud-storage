@@ -128,14 +128,14 @@ export const useFileStore = defineStore('files', () => {
     function updateFoldersInfo(updatedFolders) {
         const parentFoldersInfo = updatedFolders.reduceRight((res, currFolder) => {
             res[currFolder.id] = {
-                size: currFolder.size,
+                sizeStr: currFolder.sizeStr,
                 updatedAt: currFolder.updatedAt,
             };
             return res;
         }, {});
         return files.data.map(file => {
             if (parentFoldersInfo.hasOwnProperty(file.id)) {
-                file.size = parentFoldersInfo[file.id].size;
+                file.sizeStr = parentFoldersInfo[file.id].sizeStr;
                 file.updatedAt = parentFoldersInfo[file.id].updatedAt;
             }
             return file;

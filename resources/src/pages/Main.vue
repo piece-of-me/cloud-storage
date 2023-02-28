@@ -1,6 +1,5 @@
 <script setup>
 import logoUrl from 'images/logo.png';
-import MainBlockHeader from '@/components/MainBlockHeader.vue';
 import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
 import MainFileInfoBlock from '@/components/MainFileInfoBlock.vue';
 import { useFileStore } from '@/store/file.store.js';
@@ -201,19 +200,15 @@ onMounted(() => {
         </el-aside>
         <el-container>
           <el-main>
-            <MainBlockHeader
-              :openFolders="openFolders"
-              @go-to-folder="goToFolder"
-              class="mb-3"
-            />
-
             <MainWorkingPlace
               :files="selectedFiles"
               :loading="files.loading"
+              :open-folders="openFolders"
               @open="open"
               @create-folder="Dialog.show()"
               @show-file-info="showFileInfo"
               @upload-file="upload"
+              @go-to-folder="goToFolder"
             />
           </el-main>
           <el-footer>Footer</el-footer>

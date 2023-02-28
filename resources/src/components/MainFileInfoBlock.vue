@@ -115,7 +115,7 @@ function confirm(id) {
         <template #reference>
           <el-icon><QuestionFilled /></el-icon>
         </template>
-        <p><strong>Размер:</strong> {{ file.size }}</p>
+        <p><strong>Размер:</strong> {{ file.sizeStr }}</p>
         <p><strong>Модификации:</strong> {{ file.updatedAt }}</p>
       </el-popover>
       {{ file.shortName }}

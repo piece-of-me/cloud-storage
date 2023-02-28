@@ -1,33 +1,60 @@
 <script>
 export default {
-  name: 'MainBlockHeader'
-}
+  name: 'MainBlockHeader',
+};
 </script>
 
 <script setup>
-import { ref } from 'vue';
-defineEmits(['goToFolder']);
+import { computed, onMounted } from 'vue';
+const $emit = defineEmits(['goToFolder', 'update:selectedSortingOption', 'update:selectedSortingType', 'update:grouping']);
 const $props = defineProps({
   openFolders: {
     type: Array,
     required: true,
-  }
+  },
+  selectedSortingOption: {
+    type: String,
+    required: true,
+  },
+  selectedSortingType: {
+    type: String,
+    required: true,
+  },
+  grouping: {
+    type: Boolean,
+    required: true,
+  },
 });
 
-let selectedSortingOption = ref('');
-let selectedSortingType = ref(0);
-const grouped = ref(true);
-const sortingOptions = [
-  'По названию',
-  'По размеру',
-  'По типу',
-  'По дате',
-];
-const sortingType = [
-  'По возрастанию',
-  'По убыванию'
-];
-selectedSortingOption.value = sortingOptions[0];
+const sortingOptions = {
+  name: 'По названию',
+  size: 'По размеру',
+  type: 'По типу',
+  date: 'По дате',
+};
+const sortingType = {
+  increase: 'По возрастанию',
+  decrease: 'По убыванию',
+};
+
+const selectedSortingOption = computed({
+  set(value) {$emit('update:selectedSortingOption', value);},
+  get() {return $props.selectedSortingOption;},
+});
+const selectedSortingType = computed({
+  set(value) {$emit('update:selectedSortingType', value);},
+  get() {return $props.selectedSortingType;},
+});
+const grouping = computed({
+  set(value) {$emit('update:grouping', value);},
+  get() {return $props.grouping;},
+});
+
+onMounted(() => {
+  $emit('update:selectedSortingOption', 'name');
+  $emit('update:selectedSortingType', 'increase');
+  $emit('update:grouping', true);
+});
 </script>
 
 <template>
@@ -46,30 +73,31 @@ selectedSortingOption.value = sortingOptions[0];
     </el-breadcrumb>
     <el-dropdown trigger="click">
       <el-button type="primary">
-        <el-icon class="mr-3" v-show="selectedSortingType === 0">
+        <el-icon class="mr-3" v-show="selectedSortingType === 'increase'">
           <SortUp/>
         </el-icon>
-        <el-icon class="mr-3" v-show="selectedSortingType === 1">
+        <el-icon class="mr-3" v-show="selectedSortingType === 'decrease'">
           <SortDown/>
         </el-icon>
-        {{ selectedSortingOption }}
+        {{ sortingOptions[selectedSortingOption] }}
       </el-button>
       <template #dropdown>
         <el-dropdown-menu>
           <el-dropdown-item
-            v-for="option in sortingOptions" @click="selectedSortingOption = option">
-            <el-icon v-if="selectedSortingOption === option"><Select/></el-icon>
+            v-for="(option, key) in sortingOptions" @click="selectedSortingOption = key">
+            <el-icon v-if="selectedSortingOption === key"><Select/></el-icon>
             {{ option }}
           </el-dropdown-item>
           <el-dropdown-item
-            v-for="(type, index) in sortingType"
-            @click="selectedSortingType = index"
-            :divided="index === 0">
-            <el-icon v-if="selectedSortingType === index"><Select/></el-icon>
-            {{ type }}
+            v-for="(type, key) in sortingType"
+            @click="selectedSortingType = key"
+            :divided="'increase' === key">
+            <el-icon v-if="selectedSortingType === key"
+            >
+              <Select/></el-icon> {{ type }}
           </el-dropdown-item>
           <el-dropdown-item divided>
-            <el-checkbox v-model="grouped" label="Группировать" size="small"/>
+            <el-checkbox v-model="grouping" label="Группировать" size="small"/>
           </el-dropdown-item>
         </el-dropdown-menu>
       </template>

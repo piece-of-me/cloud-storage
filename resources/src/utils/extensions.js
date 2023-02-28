@@ -8,8 +8,9 @@ import textImgUrl from 'svg/extensions/text.svg';
 import videoImgUrl from 'svg/extensions/video.svg';
 import wordImgUrl from 'svg/extensions/word.svg';
 import zipImgUrl from 'svg/extensions/zip.svg';
+import folderImgUrl from 'images/folder-icon.png';
 
-export function getExtensionImage(extension) {
+function getExtensionImage(extension) {
     if (extension !== null) {
         if (['bat', 'config'].includes(extension)) {
             return configImgUrl;
@@ -32,4 +33,15 @@ export function getExtensionImage(extension) {
         }
     }
     return fileImgUrl;
+}
+
+export function getFileLogoUrl(file) {
+    switch (+file?.typeId) {
+        case 1:
+            return getExtensionImage(file.extension);
+        case 2:
+            return folderImgUrl;
+        case 3:
+            return file.path;
+    }
 }

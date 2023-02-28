@@ -19,7 +19,8 @@ class FileResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'typeId' => $this->type_id,
-            'size' => $this->_formatBytes($this->size),
+            'sizeStr' => $this->_formatBytes($this->size),
+            'size' => $this->size,
             'extension' => $this->extension,
             'path' => Storage::disk('public')->url($this->path),
             'public' => $this->public_hash !== null,
@@ -28,6 +29,7 @@ class FileResource extends JsonResource
             'downloads' => $this->downloads,
             'createdAt' => (new \DateTime($this->created_at))->format('d.m.Y H:i'),
             'updatedAt' => (new \DateTime($this->updated_at))->format('d.m.Y H:i'),
+            'updatedAtJSFormat' => (new \DateTime($this->updated_at))->format('Y-m-d\TH:i:s'),
         ];
     }
 
