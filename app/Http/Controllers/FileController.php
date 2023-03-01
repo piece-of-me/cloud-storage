@@ -7,7 +7,6 @@ use App\Http\Requests\File\RenameRequest;
 use App\Http\Requests\File\UploadRequest;
 use App\Http\Resources\FileResource;
 use App\Models\File;
-use App\Models\User;
 use App\Service\FileService;
 use Illuminate\Support\Facades\Auth;
 use \Illuminate\Http\JsonResponse;
@@ -53,7 +52,11 @@ class FileController extends Controller
 
     public function download(File $file)
     {
-        return $this->service->download($file);
+        $result = $this->service->download($file);
+        if (isset($result)) {
+            return $result;
+        }
+        return response()->json(status: 500);
     }
 
     public function rename(File $file, RenameRequest $request): JsonResponse

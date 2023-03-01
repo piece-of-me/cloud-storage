@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -81,5 +83,19 @@ class File extends Model
         ];
 
         return in_array($mime, $imagesMime) ? self::IMAGE : self::FILE;
+    }
+
+    public function increaseNumberOfDownloads(): void
+    {
+        try {
+            DB::beginTransaction();
+            $this->update([
+                'downloads' => $this->downloads + 1,
+            ]);
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Не удалось обновить поле "downloads" для файла (ID: ' . $this->id . ' ; NAME: ' . $this->name . ') - ' . $exception->getMessage());
+        }
     }
 }

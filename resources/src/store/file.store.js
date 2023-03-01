@@ -70,6 +70,13 @@ export const useFileStore = defineStore('files', () => {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
+            for (let i in files.data) {
+                if (files.data[i].id === file.id) {
+                    files.data[i].downloads++;
+                    break;
+                }
+            }
             return response;
         });
     }

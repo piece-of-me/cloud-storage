@@ -109,19 +109,27 @@ class FileService
 
     public function download(File $file)
     {
-        if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
-            return Storage::disk('public')->download($file->path);
+        try {
+            DB::beginTransaction();
+            $file->increaseNumberOfDownloads();
+            if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
+                return Storage::disk('public')->download($file->path);
+            }
+            $zipName = $file->name . '.zip';
+            $zipPath = 'storage/' . Auth::user()->login . '/' . $zipName;
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                $this->_collectFilesInArchive($file->path, $zip);
+            }
+            $zip->close();
+            DeleteTemporaryArchiveJob::dispatchAfterResponse($zipPath);
+            DB::commit();
+            return response()->download($zipPath, headers: ['Content-Type' => 'application/zip', 'File-Name' => $zipName]);
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Ошибка скачивания файла файла - ' . $exception->getMessage());
         }
-
-        $zipName = $file->name . '.zip';
-        $zipPath = 'storage/' . Auth::user()->login . '/' . $zipName;
-        $zip = new ZipArchive();
-        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-            $this->_collectFilesInArchive($file->path, $zip);
-        }
-        $zip->close();
-        DeleteTemporaryArchiveJob::dispatchAfterResponse($zipPath);
-        return response()->download($zipPath, headers: ['Content-Type' => 'application/zip', 'File-Name' => $zipName]);
+        return null;
     }
 
     public function rename(File $file, string $newName): File
