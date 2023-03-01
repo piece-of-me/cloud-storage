@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(static function () {
         Route::get('/', [FileController::class, 'index'])->name('file.index');
         Route::post('/upload', [FileController::class, 'upload'])->name('file.upload');
         Route::post('/create', [FileController::class, 'create'])->name('file.create');
+        Route::post('/{file}/download', [FileController::class, 'download'])->name('file.download');
         Route::patch('/{file}/rename', [FileController::class, 'rename'])->name('file.rename');
         Route::patch('/{file}/move/{newParent?}', [FileController::class, 'move'])->name('file.move');
         Route::patch('/{file}/copy/{newParent?}', [FileController::class, 'copy'])->name('file.copy');

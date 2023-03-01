@@ -60,6 +60,20 @@ export const useFileStore = defineStore('files', () => {
         });
     }
 
+    function download(file) {
+        return axios.post(`${URL}files/${file.id}/download`, {}, {responseType: 'blob'}).then(response => {
+            const fileURL = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            const fileName = response.headers?.['file-name'] ?? file.name;
+            link.href = fileURL;
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return response;
+        });
+    }
+
     function renameFile(id, name) {
         return axios.patch(`${URL}files/${id}/rename`, {
             name,
@@ -148,6 +162,7 @@ export const useFileStore = defineStore('files', () => {
         getFiles,
         createFolder,
         uploadFile,
+        download,
         renameFile,
         moveFile,
         copyFile,

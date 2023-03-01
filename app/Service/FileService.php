@@ -2,6 +2,8 @@
 
 namespace App\Service;
 
+use ZipArchive;
+use App\Jobs\DeleteTemporaryArchiveJob;
 use App\Models\File;
 use App\Models\UserFile;
 use Illuminate\Support\Facades\Auth;
@@ -103,6 +105,23 @@ class FileService
             }
         }
         return $result;
+    }
+
+    public function download(File $file)
+    {
+        if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
+            return Storage::disk('public')->download($file->path);
+        }
+
+        $zipName = $file->name . '.zip';
+        $zipPath = 'storage/' . Auth::user()->login . '/' . $zipName;
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+            $this->_collectFilesInArchive($file->path, $zip);
+        }
+        $zip->close();
+        DeleteTemporaryArchiveJob::dispatchAfterResponse($zipPath);
+        return response()->download($zipPath, headers: ['Content-Type' => 'application/zip', 'File-Name' => $zipName]);
     }
 
     public function rename(File $file, string $newName): File
@@ -308,5 +327,24 @@ class FileService
             $relationship->first()->delete();
             $attachedFile->delete();
         });
+    }
+
+    private function _collectFilesInArchive(string $path, ZipArchive &$zip, string $pathPrefix = ''): void
+    {
+        $files = Storage::disk('public')->files($path);
+        foreach ($files as $curFile) {
+            $zip->addFile(public_path('storage/' . $curFile), $pathPrefix . basename($curFile));
+        }
+        $directories = Storage::disk('public')->directories($path);
+
+        foreach ($directories as $curDirectory) {
+            $pathParts = explode('/', $curDirectory);
+            $directoryName = array_pop($pathParts);
+            $numFiles = $zip->numFiles;
+            $this->_collectFilesInArchive($curDirectory, $zip, $pathPrefix . $directoryName . '/');
+            if ($numFiles == $zip->numFiles) {
+                $zip->addEmptyDir($pathPrefix . $directoryName);
+            }
+        }
     }
 }

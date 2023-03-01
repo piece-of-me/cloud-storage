@@ -9,7 +9,7 @@ import DirectoryTreeDialog from '@/components/DirectoryTreeDialog.vue';
 import { ref, computed, reactive } from 'vue';
 import { ElLoading, ElMessageBox } from 'element-plus';
 import { useFileStore } from '@/store/file.store';
-const { renameFile, moveFile, copyFile, deleteFile } = useFileStore();
+const { download, renameFile, moveFile, copyFile, deleteFile } = useFileStore();
 
 const $emit = defineEmits(['hide']);
 const $props = defineProps({
@@ -102,6 +102,26 @@ function confirm(id) {
   });
 }
 
+function downloadFile(file) {
+  const loading = ElLoading.service({
+    lock: true,
+    text: 'Скачивание файла',
+    background: 'rgba(0, 0, 0, 0.7)',
+  });
+  download(file).catch(() => {
+    ElMessageBox.alert('Произошла ошибка при скачивании файла', 'Ошибка', {
+      showConfirmButton: false,
+      showClose: false,
+      closeOnClickModal: true,
+      closeOnPressEscape: true,
+      center: true,
+    });
+  }).finally(() => {
+    loading.close();
+    $emit('hide');
+  });
+}
+
 </script>
 
 <template>
@@ -123,7 +143,7 @@ function confirm(id) {
     <div class="flex flex-row justify-between w-full">
       <div>
         <el-button type="info"><el-icon class="mr-2"><Share /></el-icon> Поделиться</el-button>
-        <el-button type="info"><el-icon class="mr-2"><Download /></el-icon> Скачать</el-button>
+        <el-button type="info" @click="downloadFile(file)"><el-icon class="mr-2"><Download /></el-icon> Скачать</el-button>
       </div>
 
       <div>

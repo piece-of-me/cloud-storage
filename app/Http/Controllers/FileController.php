@@ -51,6 +51,11 @@ class FileController extends Controller
         return response()->json(status: 500);
     }
 
+    public function download(File $file)
+    {
+        return $this->service->download($file);
+    }
+
     public function rename(File $file, RenameRequest $request): JsonResponse
     {
         $data = $request->validated();

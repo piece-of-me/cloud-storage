@@ -65,10 +65,12 @@ function exit() {
   });
 }
 
-function open(folder) {
-  fileInfo.visible = false;
-  fileInfo.file = {};
-  openFolders.value.push(folder);
+function open(file) {
+  if (file.typeId === 2) {
+    fileInfo.visible = false;
+    fileInfo.file = {};
+    openFolders.value.push(file);
+  }
 }
 function goToFolder(folder) {
   if (folder === null) {
@@ -79,11 +81,10 @@ function goToFolder(folder) {
 }
 
 function upload(file) {
-  
   const parentFolder = openFolders.value.length > 0 ? openFolders.value.at(-1) : null;
   const loading = ElLoading.service({
     lock: true,
-    text: 'Loading',
+    text: 'Загрузка файла',
     background: 'rgba(0, 0, 0, 0.7)',
   });
 
@@ -112,7 +113,7 @@ function showFileInfo(file) {
 onMounted(() => {
   const loading = ElLoading.service({
     lock: true,
-    text: 'Loading',
+    text: 'Загрузка данных',
     background: 'rgba(0, 0, 0, 0.7)',
   });
   getFiles().finally(() => {
