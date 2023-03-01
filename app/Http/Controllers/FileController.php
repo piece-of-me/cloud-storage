@@ -90,6 +90,17 @@ class FileController extends Controller
         return response()->json(status: 500);
     }
 
+    public function share(File $file): JsonResponse
+    {
+        $hash = $this->service->share($file);
+        if (isset($hash)) {
+            return response()->json([
+                'hash' => $hash,
+            ]);
+        }
+        return response()->json(status: 500);
+    }
+
     public function delete(File $file): JsonResponse
     {
         $files = $this->service->delete($file);

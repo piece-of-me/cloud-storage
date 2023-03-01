@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(static function () {
         Route::patch('/{file}/rename', [FileController::class, 'rename'])->name('file.rename');
         Route::patch('/{file}/move/{newParent?}', [FileController::class, 'move'])->name('file.move');
         Route::patch('/{file}/copy/{newParent?}', [FileController::class, 'copy'])->name('file.copy');
+        Route::post('/{file}/share', [FileController::class, 'share'])->name('file.share');
         Route::delete('/{file}/delete', [FileController::class, 'delete'])->name('file.delete');
     });
 });

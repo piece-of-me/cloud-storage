@@ -134,6 +134,20 @@ export const useFileStore = defineStore('files', () => {
         });
     }
 
+    function shareFile(id) {
+        return axios.post(URL + 'files/' + id + '/share').then(response => {
+            if (response.data.hasOwnProperty('hash')) {
+                for (let i in files.data) {
+                    if (files.data[i].id === id) {
+                        files.data[i].public = response.data.hash.length > 0;
+                        files.data[i].publicHash = response.data.hash.length ? response.data.hash : null;
+                        break;
+                    }
+                }
+            }
+        });
+    }
+
     function deleteFile(id) {
         return axios.delete(`${URL}files/${id}/delete`).then(response => {
             if (response.status === 200) {
@@ -173,6 +187,7 @@ export const useFileStore = defineStore('files', () => {
         renameFile,
         moveFile,
         copyFile,
+        shareFile,
         deleteFile,
     };
 });

@@ -262,6 +262,30 @@ class FileService
         return $result;
     }
 
+    public function share(File $file)
+    {
+        try {
+            DB::beginTransaction();
+            $hash = '';
+            if (isset($file->public_hash)) {
+                $file->update([
+                    'public_hash'=> null,
+                ]);
+            } else {
+                $hash = md5('file_id=' . $file->id);
+                $file->update([
+                    'public_hash' => $hash,
+                ]);
+            }
+            DB::commit();
+            return $hash;
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Ошибка при создании публичной ссылки - ' . $exception->getMessage());
+        }
+        return null;
+    }
+
     public function delete(File $file): ?array
     {
         $files = [];
