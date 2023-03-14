@@ -13,7 +13,7 @@ import { reactive, computed, ref } from 'vue';
 const $emit = defineEmits(['open', 'createFolder', 'uploadFile', 'showFileInfo', 'goToFolder']);
 const $props = defineProps({
   files: {
-    type: Array,
+    type: [Array, null],
     required: true,
   },
   loading: {
@@ -135,7 +135,7 @@ function getSortingMethod(type, method) {
     v-loading="!loading"
   >
     <div
-      v-if="loading && files.length"
+      v-if="loading && files?.length"
       class="flex flex-wrap"
     >
       <div class="w-32 h-max hover:bg-stone-100 hover:cursor-pointer rounded-2xl pb-3 mr-3"
@@ -172,11 +172,11 @@ function getSortingMethod(type, method) {
       </div>
     </div>
     <div
-      v-else-if="loading && files.length <= 0"
+      v-else-if="loading && files && files.length <= 0"
       class="flex justify-center w-full"
     >
       <el-empty>
-        <div class="flex">
+        <div class="flex" v-if="files?.length">
           <el-button type="primary mr-3" @click="$emit('createFolder')">Создать папку</el-button>
           <el-upload
             ref="uploadRef"

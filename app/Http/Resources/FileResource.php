@@ -24,7 +24,7 @@ class FileResource extends JsonResource
             'extension' => $this->extension,
             'path' => Storage::disk('public')->url($this->path),
             'public' => $this->public_hash !== null,
-            'publicHash' => $this->public_hash,
+            'publicPath' => $request->schemeAndHttpHost() . '/public/' . $this->public_hash,
             'parentId' => $this->parent_id,
             'views' => $this->views,
             'downloads' => $this->downloads,

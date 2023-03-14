@@ -154,8 +154,8 @@ function share() {
     ShareDialog.process = false;
   });
 }
-function copy() {
-  copyInClipboard($props.file.publicHash);
+function copyPublicPath() {
+  copyInClipboard($props.file.publicPath);
   ElMessage({
     message: 'Скопировано в буфер обмена',
     type: 'success',
@@ -255,11 +255,8 @@ function copy() {
               </el-icon>
             </div>
             <div class="flex flex-col">
-              <div class="text-lg">Просмотры:</div>
-              <div class="lowercase">Количество переходов по ссылке:</div>
-            </div>
-            <div class="pl-3 text-2xl">
-              {{ file.views }}
+              <div class="text-lg">Просмотры: {{ file.views }}</div>
+              <div class="lowercase">Количество скачиваний: {{ file.downloads }}</div>
             </div>
           </div>
         </div>
@@ -267,7 +264,7 @@ function copy() {
           type="primary"
           class="mt-3"
           :loading="RenameDialog.process"
-          @click="copy"
+          @click="copyPublicPath"
         >
           Копировать ссылку
           <el-icon class="ml-2">

@@ -8,7 +8,7 @@ export const useFileStore = defineStore('files', () => {
     const files = reactive({
         data: [],
         loading: false,
-        error: '',
+        error: false,
     });
 
     function getFoldersByParentId(parentId) {
@@ -23,7 +23,8 @@ export const useFileStore = defineStore('files', () => {
             }
             return response;
         }).catch(() => {
-            alert('Ошибка загрузки файлов');
+            files.loading = true;
+            files.error = true;
         });
     }
 
@@ -61,15 +62,8 @@ export const useFileStore = defineStore('files', () => {
     }
 
     function download(file) {
-        return axios.post(`${URL}files/${file.id}/download`, {}, {responseType: 'blob'}).then(response => {
-            const fileURL = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            const fileName = response.headers?.['file-name'] ?? file.name;
-            link.href = fileURL;
-            link.setAttribute('download', fileName);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        return axios.post(`${URL}files/${file.id}/download`, {}, { responseType: 'blob' }).then(response => {
+            downloadFile(response.data, response.headers?.['file-name'] ?? file.name);
 
             for (let i in files.data) {
                 if (files.data[i].id === file.id) {
@@ -136,11 +130,11 @@ export const useFileStore = defineStore('files', () => {
 
     function shareFile(id) {
         return axios.post(URL + 'files/' + id + '/share').then(response => {
-            if (response.data.hasOwnProperty('hash')) {
+            if (response.data.hasOwnProperty('publicPath')) {
                 for (let i in files.data) {
                     if (files.data[i].id === id) {
-                        files.data[i].public = response.data.hash.length > 0;
-                        files.data[i].publicHash = response.data.hash.length ? response.data.hash : null;
+                        files.data[i].public = response.data.publicPath.length > 0;
+                        files.data[i].publicPath = response.data.publicPath.length ? response.data.publicPath : null;
                         break;
                     }
                 }
@@ -157,6 +151,26 @@ export const useFileStore = defineStore('files', () => {
                 }
             }
             return response;
+        });
+    }
+
+    function publicDownload(file) {
+        return axios.post(`${URL}public/files/${file.id}/download`, {}, { responseType: 'blob' }).then(response => {
+            downloadFile(response.data, response.headers?.['file-name'] ?? file.name);
+            return response;
+        });
+    }
+
+    function publicGetFiles(hash) {
+        return axios.post(URL + 'public/files/' + hash).then(response => {
+            if (response.status === 200 && response.data.hasOwnProperty('files')) {
+                files.data = response.data.files;
+            }
+            return response;
+        }).catch(() => {
+            files.error = true;
+        }).finally(() => {
+            files.loading = true;
         });
     }
 
@@ -177,6 +191,20 @@ export const useFileStore = defineStore('files', () => {
         });
     }
 
+    function downloadFile(data, name) {
+        const fileURL = window.URL.createObjectURL(new Blob([data]));
+        const link = document.createElement('a');
+        link.href = fileURL;
+        link.setAttribute('download', name);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function saveToStorage(file) {
+        return axios.post(URL + 'public/files/' + file.id + '/save');
+    }
+
     return {
         files,
         getFoldersByParentId,
@@ -189,5 +217,9 @@ export const useFileStore = defineStore('files', () => {
         copyFile,
         shareFile,
         deleteFile,
+
+        publicDownload,
+        publicGetFiles,
+        saveToStorage,
     };
 });

@@ -2,6 +2,7 @@ import Login from '@/pages/AuthLogin.vue';
 import Register from '@/pages/AuthRegister.vue';
 import Reset from '@/pages/AuthReset.vue';
 import Main from '@/pages/Main.vue';
+import PublicFile from '@/pages/PublicFile.vue';
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/store/user.store';
 
@@ -45,6 +46,10 @@ const routes = [{
     name: 'reset',
     component: Reset,
     beforeEnter: [onlyForUnauthenticated],
+}, {
+    path: '/public/:hash',
+    name: 'public',
+    component: PublicFile,
 }];
 
 const router = createRouter({

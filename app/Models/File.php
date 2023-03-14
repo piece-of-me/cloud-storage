@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * @property int id
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property null|string public_hash
  * @property null|\DateTime created_at
  * @property null|\DateTime updated_at
+ *
+ * @property Collection files
  */
 class File extends Model
 {
@@ -97,5 +100,24 @@ class File extends Model
             DB::rollBack();
             Log::error('Не удалось обновить поле "downloads" для файла (ID: ' . $this->id . ' ; NAME: ' . $this->name . ') - ' . $exception->getMessage());
         }
+    }
+
+    public function increaseNumberOfViews(): void
+    {
+        try {
+            DB::beginTransaction();
+            $this->update([
+                'views' => $this->views + 1,
+            ]);
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Не удалось обновить поле "views" для файла (ID: ' . $this->id . ' ; NAME: ' . $this->name . ') - ' . $exception->getMessage());
+        }
+    }
+
+
+    public function owner() {
+        return $this->belongsToMany(User::class, 'user_files', 'file_id', 'user_id');
     }
 }

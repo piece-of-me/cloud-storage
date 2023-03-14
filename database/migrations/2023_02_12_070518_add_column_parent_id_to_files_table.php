@@ -14,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('files', function (Blueprint $table) {
-            $table->unsignedBigInteger('parent_id')->nullable()->after('path');
+            $table->unsignedBigInteger('parent_id')->nullable()->after('path')->cascadeOnDelete();
             $table->index('parent_id', 'files_parent_idx');
             $table->foreign('parent_id', 'files_parent_fk')->on('files')->references('id');
         });

@@ -5,6 +5,7 @@ namespace App\Service;
 use ZipArchive;
 use App\Jobs\DeleteTemporaryArchiveJob;
 use App\Models\File;
+use App\Models\User;
 use App\Models\UserFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -111,12 +112,11 @@ class FileService
     {
         try {
             DB::beginTransaction();
-            $file->increaseNumberOfDownloads();
             if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
                 return Storage::disk('public')->download($file->path);
             }
             $zipName = $file->name . '.zip';
-            $zipPath = 'storage/' . Auth::user()->login . '/' . $zipName;
+            $zipPath = 'storage/' . $file->owner->first()->login . '/' . $zipName;
             $zip = new ZipArchive();
             if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
                 $this->_collectFilesInArchive($file->path, $zip);
@@ -262,7 +262,7 @@ class FileService
         return $result;
     }
 
-    public function share(File $file)
+    public function share(File $file): ?string
     {
         try {
             DB::beginTransaction();
@@ -312,6 +312,69 @@ class FileService
         return $files;
     }
 
+    public function publicIndex(string $hash): array
+    {
+        $file = File::where('public_hash', $hash)->get();
+        if ($file->count() <= 0) {
+            throw new HttpResponseException(response()->json(status: 400));
+        }
+        $file = $file->first();
+        $file->increaseNumberOfViews();
+        if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
+            return [$file, null];
+        }
+        $files = $this->_collectNestedFiles($file->id);
+        return [$file, collect($files)];
+    }
+
+    public function save(File $fileToCopy): bool
+    {
+        try {
+            DB::beginTransaction();
+            $user = $fileToCopy->owner->first();
+            $newPath = $user->login . '/' . $fileToCopy->name;
+
+            if (Storage::disk('public')->exists($newPath)) {
+                throw new HttpResponseException(response()->json([
+                    'message' => $fileToCopy->type_id === File::FOLDER ? 'Папка уже существует' : 'Файл уже существует',
+                ], 500));
+            }
+
+            FileSystem::copyDirectory(storage_path('public/' . $fileToCopy->path), storage_path('public/' . $newPath));
+            $info = [
+                'name' => $fileToCopy->name,
+                'type_id' => $fileToCopy->type_id,
+                'size' => $fileToCopy->size,
+                'path' => $fileToCopy->path,
+                'parent_id' => null,
+            ];
+            if (in_array($fileToCopy->type_id, [File::FILE, File::IMAGE])) {
+                $info['extension'] = $fileToCopy->extension;
+            }
+
+            $file = File::create($info);
+            UserFile::create([
+                'user_id' => $user->id,
+                'file_id' => $file->id,
+            ]);
+
+            if ($fileToCopy->type_id == File::FOLDER) {
+                $files = [];
+                $this->_copyNestedFiles($file, $fileToCopy, $files, user: $user);
+            }
+            DB::commit();
+        } catch (\Exception $exception) {
+            DB::rollBack();
+            Log::error('Ошибка сохранения файла - ' . $exception->getMessage());
+            if ($exception instanceof HttpResponseException) {
+                throw $exception;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
     private function _updateParentFoldersSize(int $parentId, int $size, array &$files, int $operation = self::INCREASE_SIZE): void
     {
         $parent = File::find($parentId);
@@ -323,13 +386,15 @@ class FileService
         }
     }
 
-    private function _copyNestedFiles(File $newFile, File $oldFile, array &$files): void
+    private function _copyNestedFiles(File $newFile, File $oldFile, ?array &$files = null, ?User $user = null): void
     {
-        $user = Auth::user();
+        $user = $user ?? Auth::user();
+        dd($user);
         $attachedFiles = $user->files->filter(fn($curFile) => $curFile->parent_id == $oldFile->id);
         $attachedFiles->each(function ($attachedFile) use ($user, $newFile, $oldFile, &$files) {
             if ($attachedFile->type_id == File::FOLDER) {
-                $this->_copyNestedFiles($newFile, $oldFile, $files);
+                dd($attachedFile);
+                $this->_copyNestedFiles($newFile, $oldFile, $files, $user);
             }
             $createdFile = File::create([
                 'name' => $attachedFile->name,
@@ -343,7 +408,9 @@ class FileService
                 'user_id' => $user->id,
                 'file_id' => $createdFile->id,
             ]);
-            $files[] = $createdFile;
+            if (isset($files)) {
+                $files[] = $createdFile;
+            }
         });
     }
 
@@ -378,5 +445,21 @@ class FileService
                 $zip->addEmptyDir($pathPrefix . $directoryName);
             }
         }
+    }
+
+    private function _collectNestedFiles($parent_id): array
+    {
+        $result = [];
+        $files = File::where('parent_id', $parent_id)->get();
+        if ($files->count() <= 0) {
+            return $result;
+        }
+        $files->each(function ($file) use (&$result) {
+            $result[] = $file;
+            if ($file->type_id == File::FOLDER) {
+                $result = array_merge($result, $this->_collectNestedFiles($file->id));
+            }
+        });
+        return $result;
     }
 }

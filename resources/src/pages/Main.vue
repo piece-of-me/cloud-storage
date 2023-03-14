@@ -3,7 +3,7 @@ import logoUrl from 'images/logo.png';
 import MainWorkingPlace from '@/components/MainWorkingPlace.vue';
 import MainFileInfoBlock from '@/components/MainFileInfoBlock.vue';
 import { useFileStore } from '@/store/file.store.js';
-import { useUserStore } from '@/store/user.store';
+import { useUserStore } from '@/store/user.store.js';
 import { reactive, computed, ref, onMounted } from 'vue';
 import { ElLoading, ElMessageBox } from 'element-plus';
 import { useRouter } from 'vue-router';
@@ -14,6 +14,9 @@ const $router = useRouter();
 
 const openFolders = ref([]);
 const selectedFiles = computed(() => {
+  if (files.error) {
+    return null;
+  }
   const selectedFolder = openFolders.value.length <= 0 ? null : openFolders.value[openFolders.value.length - 1];
   return files.data
     .filter(file => file?.parentId === selectedFolder?.id || selectedFolder === null && file?.parentId === null)
@@ -116,7 +119,15 @@ onMounted(() => {
     text: 'Загрузка данных',
     background: 'rgba(0, 0, 0, 0.7)',
   });
-  getFiles().finally(() => {
+  getFiles().catch(() => {
+    ElMessageBox.alert('Произошла ошибка при загрузке данных', 'Ошибка', {
+      showConfirmButton: false,
+      showClose: false,
+      closeOnClickModal: true,
+      closeOnPressEscape: true,
+      center: true,
+    });
+  }).finally(() => {
     loading.close();
   });
 });

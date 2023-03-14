@@ -95,7 +95,7 @@ class FileController extends Controller
         $hash = $this->service->share($file);
         if (isset($hash)) {
             return response()->json([
-                'hash' => $hash,
+                'publicPath' => strlen($hash) > 0 ? request()->schemeAndHttpHost() . '/public/' . $hash : '',
             ]);
         }
         return response()->json(status: 500);
@@ -108,5 +108,34 @@ class FileController extends Controller
             return response()->json(status: 500);
         }
         return response()->json(['updatedFolders' => FileResource::collection(collect($files))]);
+    }
+
+    public function publicIndex(string $hash): JsonResponse
+    {
+        list($file, $files) = $this->service->publicIndex($hash);
+        if (isset($files)) {
+            return response()->json([
+                'file' => new FileResource($file),
+                'files' => FileResource::collection(collect($files))
+            ]);
+        } else {
+            return response()->json(['file' => new FileResource($file)]);
+        }
+    }
+
+    public function publicDownload(File $file)
+    {
+        $file->increaseNumberOfDownloads();
+        return $this->download($file);
+    }
+
+    public function save(File $file): JsonResponse
+    {
+        $result = $this->service->save($file);
+        if ($result) {
+            return response()->json(['success' => true]);
+        } else {
+            return response()->json(status: 500);
+        }
     }
 }
