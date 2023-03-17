@@ -135,7 +135,7 @@ onMounted(() => {
 
 <template>
   <div class="bg-stone-200 w-screen h-screen">
-    <el-container>
+    <el-container class="h-full pb-6">
       <el-header class="flex flex-row justify-between mx-2">
         <div class="flex flex-row items-center">
           <el-image :src="logoUrl" class="w-20"/>

@@ -132,10 +132,9 @@ function getSortingMethod(type, method) {
   <div
     class="flex flex-row flex-wrap"
     @click.self="contextMenu.hide()"
-    v-loading="!loading"
   >
     <div
-      v-if="loading && files?.length"
+      v-show="loading && files?.length"
       class="flex flex-wrap"
     >
       <div class="w-32 h-max hover:bg-stone-100 hover:cursor-pointer rounded-2xl pb-3 mr-3"
@@ -172,7 +171,7 @@ function getSortingMethod(type, method) {
       </div>
     </div>
     <div
-      v-else-if="loading && files && files.length <= 0"
+      v-show="loading && files && files.length <= 0"
       class="flex justify-center w-full"
     >
       <el-empty>
