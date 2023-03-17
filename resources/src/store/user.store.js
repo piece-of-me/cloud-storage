@@ -1,13 +1,11 @@
 import { defineStore } from 'pinia';
 import axios from '@/bootstrap';
 import { ref, readonly } from 'vue';
-import { useSessionStorage } from '@vueuse/core';
 
-const userToken = useSessionStorage('userToken', null);
 const URL = import.meta.env.VITE_API_APP_URL;
 
 export const useUserStore = defineStore('users', () => {
-    let authenticated = ref(userToken.value !== null);
+    let authenticated = ref(localStorage.getItem('user-token') !== null);
 
     async function login(email, password) {
         const request = await axios.get('/sanctum/csrf-cookie');
@@ -17,7 +15,7 @@ export const useUserStore = defineStore('users', () => {
                 password,
             }).then(response => {
                 if (response.status !== 200 || !response.headers.hasOwnProperty('token')) return;
-                userToken.value = response.headers.token;
+                localStorage.setItem('user-token', response.headers.token);
                 axios.defaults.headers.common['Authorization'] = 'Bearer ' + response.headers.token;
                 authenticated.value = true;
             });
@@ -43,8 +41,8 @@ export const useUserStore = defineStore('users', () => {
     function logout() {
         return axios.post(URL + 'auth/logout').then(response => {
             if (response.status !== 200) return;
-            userToken.value = null;
             authenticated.value = false;
+            localStorage.removeItem('user-token');
             delete (axios.defaults.headers.common['Authorization']);
         });
     }

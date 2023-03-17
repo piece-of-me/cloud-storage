@@ -38,22 +38,31 @@ const sortingType = {
 };
 
 const selectedSortingOption = computed({
-  set(value) {$emit('update:selectedSortingOption', value);},
+  set(value) {
+    localStorage.setItem('sorting-option', value);
+    $emit('update:selectedSortingOption', value);
+  },
   get() {return $props.selectedSortingOption;},
 });
 const selectedSortingType = computed({
-  set(value) {$emit('update:selectedSortingType', value);},
+  set(value) {
+    localStorage.setItem('sorting-type', value);
+    $emit('update:selectedSortingType', value);
+  },
   get() {return $props.selectedSortingType;},
 });
 const grouping = computed({
-  set(value) {$emit('update:grouping', value);},
+  set(value) {
+    localStorage.setItem('grouping', value);
+    $emit('update:grouping', value);
+  },
   get() {return $props.grouping;},
 });
 
 onMounted(() => {
-  $emit('update:selectedSortingOption', 'name');
-  $emit('update:selectedSortingType', 'increase');
-  $emit('update:grouping', true);
+  $emit('update:selectedSortingOption', localStorage.getItem('sorting-option') ?? 'name');
+  $emit('update:selectedSortingType', localStorage.getItem('sorting-type') ?? 'increase');
+  $emit('update:grouping', localStorage.getItem('grouping') ?? true);
 });
 </script>
 
