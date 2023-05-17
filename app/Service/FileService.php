@@ -2,8 +2,6 @@
 
 namespace App\Service;
 
-use ZipArchive;
-use App\Jobs\DeleteTemporaryArchiveJob;
 use App\Models\File;
 use App\Models\User;
 use App\Models\UserFile;
@@ -13,6 +11,10 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File as FileSystem;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Http\Helpers\FileSystem\File as FileEntity;
+use App\Http\Helpers\FileSystem\Folder;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FileService
 {
@@ -108,26 +110,20 @@ class FileService
         return $result;
     }
 
-    public function download(File $file)
+    public function download(File $file): BinaryFileResponse|StreamedResponse|null
     {
         try {
-            DB::beginTransaction();
-            if (in_array($file->type_id, [File::FILE, File::IMAGE])) {
-                return Storage::disk('public')->download($file->path);
+            $fileSystemItem = match ($file->type_id) {
+                File::FILE, File::IMAGE => new FileEntity($file),
+                File::FOLDER => new Folder($file),
+                default => null,
+            };
+            if (!$fileSystemItem) {
+                throw new \Exception('Неверный формат сущности: ' . $file->type_id);
             }
-            $zipName = $file->name . '.zip';
-            $zipPath = 'storage/' . $file->owner->first()->login . '/' . $zipName;
-            $zip = new ZipArchive();
-            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-                $this->_collectFilesInArchive($file->path, $zip);
-            }
-            $zip->close();
-            DeleteTemporaryArchiveJob::dispatchAfterResponse($zipPath);
-            DB::commit();
-            return response()->download($zipPath, headers: ['Content-Type' => 'application/zip', 'File-Name' => $zipName]);
+            return $fileSystemItem->download();
         } catch (\Exception $exception) {
-            DB::rollBack();
-            Log::error('Ошибка скачивания файла файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка скачивания файла файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
         }
         return null;
     }
@@ -426,25 +422,6 @@ class FileService
             $relationship->first()->delete();
             $attachedFile->delete();
         });
-    }
-
-    private function _collectFilesInArchive(string $path, ZipArchive &$zip, string $pathPrefix = ''): void
-    {
-        $files = Storage::disk('public')->files($path);
-        foreach ($files as $curFile) {
-            $zip->addFile(public_path('storage/' . $curFile), $pathPrefix . basename($curFile));
-        }
-        $directories = Storage::disk('public')->directories($path);
-
-        foreach ($directories as $curDirectory) {
-            $pathParts = explode('/', $curDirectory);
-            $directoryName = array_pop($pathParts);
-            $numFiles = $zip->numFiles;
-            $this->_collectFilesInArchive($curDirectory, $zip, $pathPrefix . $directoryName . '/');
-            if ($numFiles == $zip->numFiles) {
-                $zip->addEmptyDir($pathPrefix . $directoryName);
-            }
-        }
     }
 
     private function _collectNestedFiles($parent_id): array
