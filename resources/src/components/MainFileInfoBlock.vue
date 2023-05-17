@@ -182,16 +182,16 @@ function copyPublicPath() {
     </div>
     <div class="flex flex-row justify-between w-full">
       <div>
-        <el-button type="info" @click="ShareDialog.show()"><el-icon class="mr-2"><Share /></el-icon> Поделиться</el-button>
-        <el-button type="info" @click="downloadFile(file)"><el-icon class="mr-2"><Download /></el-icon> Скачать</el-button>
+        <el-button type="info" @click="ShareDialog.show()" title="Поделиться"><el-icon><Share /></el-icon> <span class="button-text ml-2">Поделиться</span></el-button>
+        <el-button type="info" @click="downloadFile(file)" title="Скачать"><el-icon><Download /></el-icon> <span class="button-text ml-2">Скачать</span></el-button>
       </div>
 
       <div>
-        <el-button @click="RenameDialog.show()">
-          <el-icon class="mr-2"><Edit /></el-icon> Переименовать
+        <el-button @click="RenameDialog.show()" title="Переименовать">
+          <el-icon><Edit /></el-icon> <span class="button-text ml-2">Переименовать</span>
         </el-button>
-        <el-button @click="DirectoryTreeDialogModal.show(2)">
-          <el-icon class="mr-2"><Folder /></el-icon> Переместить
+        <el-button @click="DirectoryTreeDialogModal.show(2)" title="Переместить">
+          <el-icon><Folder /></el-icon> <span class="button-text ml-2">Переместить</span>
         </el-button>
         <el-popconfirm
           :title="deleteTitle"
@@ -200,15 +200,15 @@ function copyPublicPath() {
           @confirm="remove"
         >
           <template #reference>
-            <el-button>
-              <el-icon class="mr-2"><DeleteFilled /></el-icon> Удалить
+            <el-button title="Удалить">
+              <el-icon><DeleteFilled /></el-icon> <span class="button-text ml-2">Удалить</span>
             </el-button>
           </template>
         </el-popconfirm>
         <el-button @click="DirectoryTreeDialogModal.show(1)">
-          <el-icon class="mr-2"><CopyDocument /></el-icon> Копировать
+          <el-icon title="Копировать"><CopyDocument /></el-icon> <span class="button-text ml-2">Копировать</span>
         </el-button>
-        <el-button icon="CloseBold" circle @click="hide"/>
+        <el-button icon="CloseBold" circle @click="hide" title="Закрыть"/>
       </div>
     </div>
 
@@ -286,5 +286,9 @@ function copyPublicPath() {
 </template>
 
 <style scoped>
-
+@media screen and (max-width: 1536px){
+  button span.button-text {
+    display: none;
+  }
+}
 </style>
