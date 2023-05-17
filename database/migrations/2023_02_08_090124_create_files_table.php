@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('files', function (Blueprint $table) {
             $table->id();
 
-            $table->string('name', 50);
+            $table->string('name', 250);
             $table->unsignedInteger('size');
             $table->string('path');
             $table->unsignedInteger('views')->default(0);

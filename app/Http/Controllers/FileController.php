@@ -125,7 +125,6 @@ class FileController extends Controller
 
     public function publicDownload(File $file)
     {
-        $file->increaseNumberOfDownloads();
         return $this->download($file);
     }
 

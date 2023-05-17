@@ -255,8 +255,8 @@ function copyPublicPath() {
               </el-icon>
             </div>
             <div class="flex flex-col">
-              <div class="text-lg">Просмотры: {{ file.views }}</div>
-              <div class="lowercase">Количество скачиваний: {{ file.downloads }}</div>
+              <div class="text-lg">Просмотры: {{ file.views || 0 }}</div>
+              <div class="lowercase">Количество скачиваний: {{ file.downloads || 0 }}</div>
             </div>
           </div>
         </div>

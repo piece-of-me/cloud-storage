@@ -52,10 +52,10 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка создания папки - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
-            Log::error('Ошибка создания папки - ' . $exception->getMessage());
         }
         return $newFolder;
     }
@@ -102,7 +102,7 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка загрузки файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка загрузки файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
@@ -187,7 +187,7 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка при перемещении файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка при перемещении файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
@@ -249,7 +249,7 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка при копировании файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка при копировании файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
@@ -277,7 +277,7 @@ class FileService
             return $hash;
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка при создании публичной ссылки - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка при создании публичной ссылки - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
         }
         return null;
     }
@@ -302,7 +302,7 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка удаления файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка удаления файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             return null;
         }
         return $files;
@@ -361,7 +361,7 @@ class FileService
             DB::commit();
         } catch (\Exception $exception) {
             DB::rollBack();
-            Log::error('Ошибка сохранения файла - ' . $exception->getMessage());
+            Log::error(PHP_EOL . PHP_EOL . 'Ошибка сохранения файла - ' . $exception->getMessage() . PHP_EOL, ['trace' => $exception->getTraceAsString()]);
             if ($exception instanceof HttpResponseException) {
                 throw $exception;
             }
@@ -385,11 +385,9 @@ class FileService
     private function _copyNestedFiles(File $newFile, File $oldFile, ?array &$files = null, ?User $user = null): void
     {
         $user = $user ?? Auth::user();
-        dd($user);
         $attachedFiles = $user->files->filter(fn($curFile) => $curFile->parent_id == $oldFile->id);
         $attachedFiles->each(function ($attachedFile) use ($user, $newFile, $oldFile, &$files) {
             if ($attachedFile->type_id == File::FOLDER) {
-                dd($attachedFile);
                 $this->_copyNestedFiles($newFile, $oldFile, $files, $user);
             }
             $createdFile = File::create([
