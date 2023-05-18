@@ -14,14 +14,16 @@
 * Установить зависимости с помощью `npm install` и `composer install`;
 
 ### Запуск приложения
+- Конвертируйте `.env.example` файл в Unix-формат с помощью `dos2unix .env.example`;
 - Скопировать переменные окружения `cat .env.example > .env`;
 - Создать и запустить контейнеры с помощью `docker-compose up  -d`;
 - Запустить оболочку `bash` в контейнер `app` с помощью `docker exec -it app bash`;
-- Выполнить миграцию и запустить сидеры с помощью `php artisan:migrate --seed`;
+- Выполнить миграцию и запустить сидеры с помощью `php artisan migrate --seed`;
 - Запустить сервер разработки с помощью `npm run dev`;
+- При необходимости сгенерируйте новый ключ с помощью `php artisan key:generate`;
 
 # Дополнительно
-- Существует тестовый пользователь: `username: test_user0@mail.com`, `password: 8JSkbBn0SlQQ`
+- Существует тестовый пользователь: `email: test_user0@mail.com`, `password: 8JSkbBn0SlQQ`
 
 # Используемые технологии
 
